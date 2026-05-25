@@ -1,0 +1,38 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="ClosedXML" Version="0.105.0" />
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.8" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="9.0.8">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\AboKamel.Application\AboKamel.Application.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="wwwroot\images\products\الشيبسي\تايجر\تايجر 15\" />
+    <Folder Include="wwwroot\images\products\الشيبسي\راو\" />
+    <Folder Include="wwwroot\images\products\الشيبسي\شيبسي\شيبسي 7\" />
+    <Folder Include="wwwroot\images\products\حلويات\شكولاتة\تيكا\" />
+    <Folder Include="wwwroot\images\products\حلويات\شكولاتة\رولانا\" />
+    <Folder Include="wwwroot\images\products\حلويات\لبان وشيكابون\سمارة\" />
+    <Folder Include="wwwroot\images\products\حلويات\لبان وشيكابون\شكلتس\" />
+    <Folder Include="wwwroot\images\products\حلويات\لبان وشيكابون\كلوريتس وترايدنت\" />
+    <Folder Include="wwwroot\images\products\سلع اساسية\مكرونة\شكاير عادية\" />
+    <Folder Include="wwwroot\images\products\سلع اساسية\مكرونة\مكرونات\" />
+    <Folder Include="wwwroot\images\products\منتاجات عطارة\" />
+    <Folder Include="wwwroot\images\products\ياميش رمضان وبلح\" />
+    <Folder Include="wwwroot\voices\" />
+  </ItemGroup>
+
+</Project>

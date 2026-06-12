@@ -34,7 +34,6 @@ public class DebtsController : DashboardBaseController
         return Ok(result);
     }
 
-    [AllowAnonymous]
     [HttpGet("GetUserBalance/user/{userId}")]
     public async Task<ActionResult<ResultAbstract<List<DebtResponseDto>>>> GetUserBalanaceAsync(string userId)
     {

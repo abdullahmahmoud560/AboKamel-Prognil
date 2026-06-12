@@ -1,18 +1,16 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace Services.Application.Dtos.Authentication;
 
 public class ChangePasswordRequestDto
 {
-
-    [Required]
+    [Required(ErrorMessage = "كلمة المرور الحالية مطلوبة")]
     public string CurrentPassword { get; set; } = "";
 
-    [Required]
+    [Required(ErrorMessage = "كلمة المرور الجديدة مطلوبة")]
     public string NewPassword { get; set; } = "";
+
+    [Required(ErrorMessage = "تأكيد كلمة المرور مطلوب")]
+    [Compare(nameof(NewPassword), ErrorMessage = "كلمة المرور وتأكيدها غير متطابقتين")]
+    public string ConfirmPassword { get; set; } = "";
 }

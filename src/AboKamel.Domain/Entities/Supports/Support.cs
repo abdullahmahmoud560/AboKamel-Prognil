@@ -9,5 +9,6 @@ public class Support : AuditableEntity<int>
     public string PhoneNumber { get; set; } = string.Empty;
     public string Email { get; set; } = string.Empty;
     public string Description { get; set; } = string.Empty;
-    public SupportStatus Status { get; set; }
+    public SupportStatus Status { get; set; } = SupportStatus.Pending;
+    public string? AttachmentPath { get; set; }
 }

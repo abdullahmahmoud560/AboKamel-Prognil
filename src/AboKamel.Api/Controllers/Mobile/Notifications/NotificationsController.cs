@@ -1,10 +1,13 @@
 ﻿using AboKamel.Application.Services.Hubs;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using Services.Api.Controllers.Mobile;
+using Services.Core.Helpers.Roles;
 
 namespace AboKamel.Api.Controllers.Mobile.Notifications;
 
+[Authorize(Roles = RoleName.SuperAdmin)]
 public class NotificationsController : MobileBaseController
 {
     private readonly IHubContext<NotificationHub> _hub;

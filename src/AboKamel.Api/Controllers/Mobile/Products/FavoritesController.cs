@@ -1,11 +1,10 @@
-﻿using Capsula.Application.Contracts.Mobile.Products;
+using Capsula.Application.Contracts.Mobile.Products;
 using Capsula.Application.Dtos.Mobile.Products;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Services.Api.Controllers.Mobile;
 using Services.Core.Helpers.Roles;
 using Services.Core.Results;
-using System.Security.Claims;
 
 namespace Capsula.Api.Controllers.Mobile.Products;
 
@@ -24,8 +23,7 @@ public class FavoritesController : MobileBaseController
     [Authorize(Roles = RoleName.Customer)]
     public async Task<ActionResult<ResultAbstract<FavoriteResponseDto>>> GetFavorites()
     {
-        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        var favorites = await _favoriteService.GetAllFavoritesByUserIdAsync(userId);
+        var favorites = await _favoriteService.GetAllFavoritesByUserIdAsync();
         return Ok(favorites);
     }
 
@@ -33,7 +31,6 @@ public class FavoritesController : MobileBaseController
     [Authorize(Roles = RoleName.Customer)]
     public async Task<ActionResult<ResultAbstract<FavoriteResponseDto>>> AddFavorite([FromBody] FavoriteRequestDto dto)
     {
-        dto.UserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
         var result = await _favoriteService.CreateAsync(dto);
         return result;
     }
@@ -44,8 +41,7 @@ public class FavoritesController : MobileBaseController
     {
         var favoriteRequestDto = new FavoriteRequestDto
         {
-            ProductId = id,
-            UserId = User.FindFirstValue(ClaimTypes.NameIdentifier)
+            ProductId = id
         };
 
         return await _favoriteService.DeleteFavoriteByProductIdAsync(favoriteRequestDto);

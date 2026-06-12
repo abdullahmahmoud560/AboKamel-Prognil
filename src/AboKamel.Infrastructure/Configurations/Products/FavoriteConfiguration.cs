@@ -1,4 +1,4 @@
-﻿using Capsula.Domain.Entities.Products;
+using Capsula.Domain.Entities.Products;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -11,5 +11,10 @@ public class FavoriteConfiguration : IEntityTypeConfiguration<Favorite>
         builder.Property(f => f.UserId)
             .IsRequired()
             .HasMaxLength(100);
+
+        builder.HasOne<Services.Domain.Entities.Users.ApplicationUser>()
+            .WithMany()
+            .HasForeignKey(f => f.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }

@@ -1,11 +1,13 @@
 ﻿using Capsula.Application.Contracts.Dashboard.Categories;
 using Capsula.Application.Contracts.Images;
 using Capsula.Application.Dtos.Dashboard.Categories;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Services.Core.Results;
 
 namespace Capsula.Api.Controllers.Dashboard.Categoriers;
 
+[Authorize]
 public class CategoriesController : DashboardBaseController
 {
     private readonly ICategoryService _categoryService;

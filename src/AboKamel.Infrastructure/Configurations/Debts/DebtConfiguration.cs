@@ -1,4 +1,4 @@
-﻿using AboKamel.Domain.Entities.Debts;
+using AboKamel.Domain.Entities.Debts;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -17,5 +17,10 @@ public class DebtConfiguration : IEntityTypeConfiguration<Debt>
 
         builder.Property(x => x.DebitCredit)
             .IsRequired();
+
+        builder.HasOne(d => d.Customer)
+            .WithMany()
+            .HasForeignKey(d => d.CustomerId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }

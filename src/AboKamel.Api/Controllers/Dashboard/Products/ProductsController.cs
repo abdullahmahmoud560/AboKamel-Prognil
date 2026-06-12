@@ -1,9 +1,10 @@
-﻿using AboKamel.Application.Dtos.Dashboard.SellingUnits;
+using AboKamel.Application.Dtos.Dashboard.SellingUnits;
 using Capsula.Application.Contracts.Dashboard.Products;
 using Capsula.Application.Contracts.Images;
 using Capsula.Application.Dtos.Dashboard.Products;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Services.Core.Dtos;
 using Services.Core.Results;
 
 namespace Capsula.Api.Controllers.Dashboard.Products;
@@ -20,9 +21,9 @@ public class ProductsController : DashboardBaseController
     }
 
     [HttpGet]
-    public async Task<ActionResult<ResultAbstract<IEnumerable<ProductResponseDto>>>> GetAllAsync()
+    public async Task<ActionResult<ResultAbstract<PagedResultDto<ProductResponseDto>>>> GetAllAsync([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
     {
-        var result = await _productService.GetProductsWithDetailsAsync();
+        var result = await _productService.GetAllProductsAsync(pageNumber, pageSize);
         return Ok(result);
     }
 
@@ -53,7 +54,7 @@ public class ProductsController : DashboardBaseController
             return BadRequest(result);
         }
 
-        var relativePath = _imageService.ExtractImagePath(result.Value.ImageUrl);
+        var relativePath = _imageService.ExtractImagePath(result.Value.ImageUrl ?? string.Empty);
         await _imageService.SaveImageAsync(relativePath, request.ImageFile);
 
         return Ok(result);
@@ -100,7 +101,7 @@ public class ProductsController : DashboardBaseController
             return BadRequest(result);
         }
 
-        var relativePath = _imageService.ExtractImagePath(result.Value.ImageUrl);
+        var relativePath = _imageService.ExtractImagePath(result.Value.ImageUrl ?? string.Empty);
         await _imageService.SaveImageAsync(relativePath, request.ImageFile);
 
         return Ok(result);
@@ -117,7 +118,7 @@ public class ProductsController : DashboardBaseController
             return NotFound(result);
         }
 
-        var relativePath = _imageService.ExtractImagePath(result.Value.ImageUrl);
+        var relativePath = _imageService.ExtractImagePath(result.Value.ImageUrl ?? string.Empty);
         _imageService.DeleteImage(relativePath);
 
         return Ok(result);

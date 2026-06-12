@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 
 namespace Services.Application.Dtos.Authentication;
 
@@ -7,8 +7,6 @@ public class LoginRequestDto
     [Required]
     public string Email { get; set; } = string.Empty;
 
-    public string Password { get; set; } = string.Empty;
-
     [Required]
-    public string CustomPassword { get; set; } = string.Empty;
+    public string Password { get; set; } = string.Empty;
 }

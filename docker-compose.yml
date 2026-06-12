@@ -1,0 +1,74 @@
+version: '3.8'
+
+services:
+  abokamel-mysql:
+    image: mysql:8.0
+    container_name: abokamel-mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: abokamel
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "127.0.0.1:3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - abokamel-net
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u${DB_USER}", "-p${DB_PASSWORD}"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  phpmyadmin:
+    image: phpmyadmin:5.2
+    container_name: abokamel-phpmyadmin
+    restart: always
+    ports:
+      - "127.0.0.1:8080:80"
+    environment:
+      PMA_HOST: abokamel-mysql
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+    networks:
+      - abokamel-net
+    depends_on:
+      abokamel-mysql:
+        condition: service_healthy
+
+  abokamel-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: abokamel-backend
+    restart: always
+    ports:
+      - "127.0.0.1:5000:80"
+    volumes:
+      - /home/abokamel/uploads:/app/wwwroot/images
+    environment:
+      - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT}
+      - ConnectionStrings__DefaultConnection=${ConnectionStrings__DefaultConnection}
+      - JWT__Key=${JWT__Key}
+      - JWT__Issuer=${JWT__Issuer}
+      - JWT__Audience=${JWT__Audience}
+      - JWT__DurationInDays=${JWT__DurationInDays}
+      - Email__SmtpHost=${Email__SmtpHost}
+      - Email__SmtpPort=${Email__SmtpPort}
+      - Email__SmtpUsername=${Email__SmtpUsername}
+      - Email__SmtpPassword=${Email__SmtpPassword}
+      - Email__FromEmail=${Email__FromEmail}
+      - Email__FromName=${Email__FromName}
+    networks:
+      - abokamel-net
+    depends_on:
+      abokamel-mysql:
+        condition: service_healthy
+
+networks:
+  abokamel-net:
+    driver: bridge
+
+volumes:
+  mysql_data:

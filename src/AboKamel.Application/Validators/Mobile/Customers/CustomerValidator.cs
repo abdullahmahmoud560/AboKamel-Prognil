@@ -1,4 +1,4 @@
-﻿using Capsula.Application.Dtos.Authentication.Users.Customers;
+using Capsula.Application.Dtos.Authentication.Users.Customers;
 using FluentValidation;
 
 namespace Capsula.Application.Validators.Mobile.Customers;
@@ -17,7 +17,7 @@ public class CustomerValidator : AbstractValidator<CustomerRequestDto>
             .EmailAddress().WithMessage("Email format is invalid.")
             .MaximumLength(100).WithMessage("Email must not exceed 100 characters.");
 
-        RuleFor(x => x.CustomPassword)
+        RuleFor(x => x.Password)
             .NotEmpty().WithMessage("Password is required.")
             .MinimumLength(6).WithMessage("Password must be at least 6 characters long.")
             .MaximumLength(100).WithMessage("Password must not exceed 100 characters.");

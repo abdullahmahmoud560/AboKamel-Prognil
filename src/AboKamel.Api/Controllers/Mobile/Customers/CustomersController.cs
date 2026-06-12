@@ -1,4 +1,5 @@
-﻿using AboKamel.Core.Dtos;
+using AboKamel.Application.Dtos.Authentication.Users.Customers;
+using AboKamel.Core.Dtos;
 using Capsula.Application.Contracts.Mobile.Customers;
 using Capsula.Application.Dtos.Authentication.Users.Customers;
 using Microsoft.AspNetCore.Authorization;
@@ -27,16 +28,35 @@ public class CustomersController : MobileBaseController
     }
 
     [HttpPost("RegisterCustomer")]
-    public async Task<ActionResult<ResultAbstract<CustomerResponseDto>>> RegisterCustmer(CustomerRequestDto customerRequest)
+    [AllowAnonymous] // Explicitly allow anonymous access since it's registration
+    public async Task<ActionResult<ResultAbstract<CustomerResponseDto>>> RegisterCustomer(RegisterCustomerRequestDto customerRequest)
     {
         return await _customerService.RegisterCustomerAsync(customerRequest);
     }
 
     [HttpPut("UpdateCustomer")]
-    [Authorize(Roles = RoleName.Customer)]
-    public async Task<ActionResult<ResultAbstract<CustomerResponseDto>>> UpdateCustomerAsync(CustomerRequestDto customerRequest)
+    [Authorize]
+    public async Task<ActionResult<ResultAbstract<CustomerResponseDto>>> UpdateCustomer(UpdateCustomerRequestDto request)
     {
-        var customerId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        return await _customerService.UpdateCustomerAsync(customerRequest, customerId);
+        var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrEmpty(userId))
+        {
+            return Unauthorized(Result.Error("User not authenticated."));
+        }
+
+        return await _customerService.UpdateCustomerAsync(userId, request);
+    }
+
+    [HttpDelete("DeleteAccount")]
+    [Authorize]
+    public async Task<ActionResult<Result>> DeleteAccount()
+    {
+        var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrEmpty(userId))
+        {
+            return Unauthorized(Result.Error("User not authenticated."));
+        }
+
+        return await _customerService.DeleteCustomerAccountAsync(userId);
     }
 }

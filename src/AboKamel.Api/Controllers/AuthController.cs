@@ -1,4 +1,4 @@
-﻿using AboKamel.Application.Dtos.Dashboard.Roles;
+using AboKamel.Application.Dtos.Dashboard.Roles;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -46,7 +46,7 @@ public class AuthController(IAuthService authService) : BaseController
     [HttpPost("CreateRole/roleName/{roleName}")]
     [ProducesResponseType(typeof(Result), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(Result), StatusCodes.Status400BadRequest)]
-    public async Task<Result> AddUserToRole(string roleName)
+    public async Task<Result> CreateRole(string roleName)
     {
         return await _authService.CreateRole(roleName);
     }
@@ -67,20 +67,6 @@ public class AuthController(IAuthService authService) : BaseController
     public async Task<Result> AddUserToRole(string userId, string roleName)
     {
         return await _authService.AddUserToRoleAsync(userId, roleName);
-    }
-
-    /// <summary>
-    /// action for add an admin account.
-    /// </summary>
-    /// <returns>result representing the adding admin successfully.</returns>
-    [HttpPost("CreateAdminAccount")]
-    [ProducesResponseType(typeof(Result), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(Result), StatusCodes.Status400BadRequest)]
-    public async Task<Result> CreateAdminAccount()
-    {
-        await _authService.CreateAdminAccount();
-
-        return Result.SuccessWithMessage("Create admin account successfully");
     }
 
     /// <summary>
@@ -111,8 +97,7 @@ public class AuthController(IAuthService authService) : BaseController
     [ProducesResponseType(typeof(Result), StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<Result>> ChangePassword(ChangePasswordRequestDto changePasswordRequest)
     {
-        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        return await _authService.ChangePasswordAsync(changePasswordRequest, userId);
+        return await _authService.ChangePasswordAsync(changePasswordRequest);
     }
 
     /// <summary>
@@ -125,20 +110,62 @@ public class AuthController(IAuthService authService) : BaseController
     [ProducesResponseType(typeof(Result), StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<ResultAbstract<BaseUserResponseDto>>> GetCurrentUser()
     {
-        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        return await _authService.GetUserAsync(userId);
+        return await _authService.GetUserAsync();
     }
 
     /// <summary>
     /// Get the current logged in user data.
     /// </summary>
     /// <returns>A result containing the current logged in user data.</returns>
-    //[Authorize(Roles = "SuperAdmin")]
+    [Authorize(Roles = "SuperAdmin")]
     [HttpGet("GetRoles")]
     [ProducesResponseType(typeof(ResultAbstract<List<RoleResponseDto>>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(Result), StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<ResultAbstract<List<RoleResponseDto>>>> GetRolesAsync()
     {
         return await _authService.GetRolesAsync();
+    }
+
+    /// <summary>
+    /// Initiates the forget password process.
+    /// </summary>
+    /// <param name="request">The forget password request dto.</param>
+    /// <returns>A result representing the operation.</returns>
+    [HttpPost("ForgetPassword")]
+    public async Task<IActionResult> ForgetPassword(ForgetPasswordRequestDto request)
+    {
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(ModelState);
+        }
+
+        var result = await _authService.ForgetPasswordAsync(request);
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// Verifies the OTP for registration or password reset.
+    /// </summary>
+    /// <param name="request">The verify OTP request dto.</param>
+    /// <returns>A result representing the operation.</returns>
+    [HttpPost("VerifyOtp")]
+    [ProducesResponseType(typeof(ResultAbstract<string>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(Result), StatusCodes.Status400BadRequest)]
+    public async Task<ResultAbstract<string>> VerifyOtp(VerifyOtpRequestDto request)
+    {
+        return await _authService.VerifyOtpAsync(request);
+    }
+
+    /// <summary>
+    /// Resets the password after OTP verification.
+    /// </summary>
+    /// <param name="request">The reset password request dto.</param>
+    /// <returns>A result representing the operation.</returns>
+    [HttpPost("ResetPassword")]
+    [ProducesResponseType(typeof(Result), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(Result), StatusCodes.Status400BadRequest)]
+    public async Task<Result> ResetPassword(ResetPasswordRequestDto request)
+    {
+        return await _authService.ResetPasswordAsync(request);
     }
 }

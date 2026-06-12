@@ -1,6 +1,7 @@
-﻿using AboKamel.Application.Contracts.Dashboard.Areas;
+using AboKamel.Application.Contracts.Dashboard.Areas;
 using AboKamel.Application.Dtos.Dashboard.Areas;
 using Capsula.Api.Controllers.Dashboard;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Services.Core.Results;
 
@@ -16,6 +17,7 @@ public class AreasController : DashboardBaseController
     }
 
     [HttpGet]
+    [AllowAnonymous]
     public async Task<ActionResult<ResultAbstract<IEnumerable<AreaResponseDto>>>> GetAllAsync()
     {
         var result = await _areaService.GetAllAsync();

@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using Capsula.Application.Contracts.Images;
 using Capsula.Application.Contracts.Mobile.Carts;
 using Capsula.Application.Contracts.Voices;
@@ -10,6 +10,7 @@ using Capsula.Domain.Repositories.Carts;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Services.Core.Results;
+using System.Security.Claims;
 
 namespace Capsula.Application.Services.Mobile.Carts;
 
@@ -21,8 +22,9 @@ public class CartService : ICartService
     private readonly IPrescriptionRepository _prescriptionRepository;
     private readonly IMapper _mapper;
     private readonly ILogger<Cart> _logger;
+    private readonly IHttpContextAccessor _httpContextAccessor;
 
-    public CartService(ICartRepository cartRepository, IMapper mapper, ILogger<Cart> logger, IImageService imageService, IVoiceService voiceService, IPrescriptionRepository prescriptionRepository)
+    public CartService(ICartRepository cartRepository, IMapper mapper, ILogger<Cart> logger, IImageService imageService, IVoiceService voiceService, IPrescriptionRepository prescriptionRepository, IHttpContextAccessor httpContextAccessor)
     {
         _cartRepository = cartRepository;
         _mapper = mapper;
@@ -30,6 +32,17 @@ public class CartService : ICartService
         _imageService = imageService;
         _voiceService = voiceService;
         _prescriptionRepository = prescriptionRepository;
+        _httpContextAccessor = httpContextAccessor;
+    }
+
+    private string GetCurrentUserId()
+    {
+        var userId = _httpContextAccessor.HttpContext?.User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrEmpty(userId))
+        {
+            throw new UnauthorizedAccessException("User not authenticated.");
+        }
+        return userId;
     }
 
     public async Task<bool> CartExistsAsync(int cartId)
@@ -37,14 +50,16 @@ public class CartService : ICartService
         return await _cartRepository.ExistsAsync(cartId);
     }
 
-    public async Task<Cart> GetCustomerCartAsync(string customerId)
+    public async Task<Cart> GetCustomerCartAsync(string? customerId = null)
     {
-        return await _cartRepository.GetCustomerCartAsync(customerId);
+        var currentUserId = customerId ?? GetCurrentUserId();
+        return await _cartRepository.GetCustomerCartAsync(currentUserId);
     }
 
-    public async Task<ResultAbstract<CartDetailedResponseDto>> GetCustomerCartDetailsAsync(string customerId)
+    public async Task<ResultAbstract<CartDetailedResponseDto>> GetCustomerCartDetailsAsync(string? customerId = null)
     {
-        var cart = await _cartRepository.GetCustomerCartDetailsAsync(customerId);
+        var currentUserId = customerId ?? GetCurrentUserId();
+        var cart = await _cartRepository.GetCustomerCartDetailsAsync(currentUserId);
 
         var cartDetails = _mapper.Map<CartDetailedResponseDto>(cart);
 
@@ -71,18 +86,19 @@ public class CartService : ICartService
         return Result.Success(cartDetails);
     }
 
-    public async Task<Cart> InitializeCustomerCartAsync(string customerId)
+    public async Task<Cart> InitializeCustomerCartAsync(string? customerId = null)
     {
+        var currentUserId = customerId ?? GetCurrentUserId();
         var cart = new Cart
         {
-            CustomerId = customerId
+            CustomerId = currentUserId
         };
 
         var isCartAdded = await _cartRepository.AddAsync(cart);
 
         if (!isCartAdded) 
         {
-            _logger.LogError($"Could not initialize cart for customer: {customerId}");
+            _logger.LogError($"Could not initialize cart for customer: {currentUserId}");
             return null;
         }
 
@@ -100,18 +116,19 @@ public class CartService : ICartService
         return cart;
     }
 
-    public async Task<ResultAbstract<bool>> AddPrescriptionImageToCartAsync(string customerId, IFormFile ImageFile)
+    public async Task<ResultAbstract<bool>> AddPrescriptionImageToCartAsync(IFormFile ImageFile, string? customerId = null)
     {
+        var currentUserId = customerId ?? GetCurrentUserId();
         _imageService.ValidateImage(ImageFile);
 
         var relativePath = _imageService.GetImageRelativePath(ImageFile);
         await _imageService.SaveImageAsync(relativePath, ImageFile);
 
-        var cart = await _cartRepository.GetCustomerCartAsync(customerId);
+        var cart = await _cartRepository.GetCustomerCartAsync(currentUserId);
 
         if (cart is null)
         {
-            cart = await InitializeCustomerCartAsync(customerId);
+            cart = await InitializeCustomerCartAsync(currentUserId);
         }
 
         var prescription = await _prescriptionRepository.GetCartPrescription(cart.Id);
@@ -137,18 +154,19 @@ public class CartService : ICartService
         return Result.Success(true);
     }
 
-    public async Task<ResultAbstract<bool>> AddPrescriptionVoiceRecordToCartAsync(string customerId, IFormFile VoiceFile)
+    public async Task<ResultAbstract<bool>> AddPrescriptionVoiceRecordToCartAsync(IFormFile VoiceFile, string? customerId = null)
     {
+        var currentUserId = customerId ?? GetCurrentUserId();
         _voiceService.ValidateVoice(VoiceFile);
 
         var relativePath = _voiceService.GetVoiceRelativePath(VoiceFile);
         await _voiceService.SaveVoiceAsync(relativePath, VoiceFile);
 
-        var cart = await _cartRepository.GetCustomerCartAsync(customerId);
+        var cart = await _cartRepository.GetCustomerCartAsync(currentUserId);
 
         if (cart is null)
         {
-            cart = await InitializeCustomerCartAsync(customerId);
+            cart = await InitializeCustomerCartAsync(currentUserId);
         }
 
         var prescription = await _prescriptionRepository.GetCartPrescription(cart.Id);
@@ -171,6 +189,6 @@ public class CartService : ICartService
         prescription.VoiceRecords.Add(vooiceRecord);
         await _prescriptionRepository.EditAsync(prescription);
 
-        return true;
+        return Result.Success(true);
     }
 }

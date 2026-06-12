@@ -1,12 +1,14 @@
-﻿using AutoMapper;
+using AutoMapper;
 using Azure.Core;
 using Capsula.Application.Contracts.Mobile.Carts;
 using Capsula.Application.Dtos.Mobile.Carts;
 using Capsula.Domain.Entities.Carts;
 using Capsula.Domain.Repositories.Carts;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Services.Core.Dtos;
 using Services.Core.Results;
+using System.Security.Claims;
 
 namespace Capsula.Application.Services.Mobile.Carts;
 
@@ -16,30 +18,43 @@ public class CartItemService : ICartItemService
     private readonly ICartService _cartService;
     private readonly IMapper _mapper;
     private readonly ILogger<CartItem> _logger;
+    private readonly IHttpContextAccessor _httpContextAccessor;
 
-    public CartItemService(ICartItemRepository cartItemRepository, IMapper mapper, ILogger<CartItem> logger, ICartService cartService)
+    public CartItemService(ICartItemRepository cartItemRepository, IMapper mapper, ILogger<CartItem> logger, ICartService cartService, IHttpContextAccessor httpContextAccessor)
     {
         _cartItemRepository = cartItemRepository;
         _mapper = mapper;
         _logger = logger;
         _cartService = cartService;
+        _httpContextAccessor = httpContextAccessor;
     }
 
-    public async Task<ResultAbstract<CartItemResponseDto>> AddItemToCartAsync(CartItemRequestDto request, string customerId)
+    private string GetCurrentUserId()
     {
+        var userId = _httpContextAccessor.HttpContext?.User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrEmpty(userId))
+        {
+            throw new UnauthorizedAccessException("User not authenticated.");
+        }
+        return userId;
+    }
+
+    public async Task<ResultAbstract<CartItemResponseDto>> AddItemToCartAsync(CartItemRequestDto request, string? customerId = null)
+    {
+        var currentUserId = customerId ?? GetCurrentUserId();
         CartItem cartItem;
-        var cart = await _cartService.GetCustomerCartAsync(customerId);
+        var cart = await _cartService.GetCustomerCartAsync(currentUserId);
 
         if(cart is null)
         {
-            cart = await _cartService.InitializeCustomerCartAsync(customerId);
+            cart = await _cartService.InitializeCustomerCartAsync(currentUserId);
         }
 
-        cartItem = await _cartItemRepository.GetCustomerCartItemAsync(request.ProductId, request.ProductSellingUnitId, customerId);
+        cartItem = await _cartItemRepository.GetCustomerCartItemAsync(request.ProductId, request.ProductSellingUnitId, currentUserId);
 
         if(cartItem is not null)
         {
-            var result = await UpdateCartItemQuantityAsync(request, customerId);
+            var result = await UpdateCartItemQuantityAsync(request, currentUserId);
             return result;
         }
         else
@@ -51,21 +66,22 @@ public class CartItemService : ICartItemService
 
             if (!isCartItemAdded)
             {
-                _logger.LogError($"Could not add cart item for customer: {customerId}");
-                return Result.Error($"Could not add cart item for customer: {customerId}");
+                _logger.LogError($"Could not add cart item for customer: {currentUserId}");
+                return Result.Error($"Could not add cart item for customer: {currentUserId}");
             }
         }
 
         return Result.Success(_mapper.Map<CartItemResponseDto>(cartItem));
     }
 
-    public async Task<ResultAbstract<CartItemResponseDto>> UpdateCartItemQuantityAsync(CartItemRequestDto request, string customerId)
+    public async Task<ResultAbstract<CartItemResponseDto>> UpdateCartItemQuantityAsync(CartItemRequestDto request, string? customerId = null)
     {
-        var cartItem = await _cartItemRepository.GetCustomerCartItemAsync(request.ProductId, request.ProductSellingUnitId, customerId);
+        var currentUserId = customerId ?? GetCurrentUserId();
+        var cartItem = await _cartItemRepository.GetCustomerCartItemAsync(request.ProductId, request.ProductSellingUnitId, currentUserId);
 
         if(cartItem is null)
         {
-            _logger.LogError($"Could not find cart item for custmer {customerId}");
+            _logger.LogError($"Could not find cart item for custmer {currentUserId}");
             return Result.Error("Could not find cart item");
         }
 
@@ -74,20 +90,21 @@ public class CartItemService : ICartItemService
 
         if (!isCartItemUpdated)
         {
-            _logger.LogError($"Could not update cart item quantity for customer: {customerId}");
-            return Result.Error($"Could not update cart item quantity for customer: {customerId}");
+            _logger.LogError($"Could not update cart item quantity for customer: {currentUserId}");
+            return Result.Error($"Could not update cart item quantity for customer: {currentUserId}");
         }
 
         return Result.Success(_mapper.Map<CartItemResponseDto>(cartItem));
     }
 
-    public async Task<ResultAbstract<CartItemResponseDto>> DeleteCartItemAsync(int productId, int productSellingUnitId, string customerId)
+    public async Task<ResultAbstract<CartItemResponseDto>> DeleteCartItemAsync(int productId, int productSellingUnitId, string? customerId = null)
     {
-        var cartItem = await _cartItemRepository.GetCustomerCartItemAsync(productId, productSellingUnitId, customerId);
+        var currentUserId = customerId ?? GetCurrentUserId();
+        var cartItem = await _cartItemRepository.GetCustomerCartItemAsync(productId, productSellingUnitId, currentUserId);
 
         if (cartItem is null)
         {
-            _logger.LogError($"Could not find cart item for custmer {customerId}");
+            _logger.LogError($"Could not find cart item for custmer {currentUserId}");
             return Result.Error("Could not find cart item");
         }
 
@@ -95,8 +112,8 @@ public class CartItemService : ICartItemService
 
         if (!isCartItemdELETED)
         {
-            _logger.LogError($"Could not delete cart item for customer: {customerId}");
-            return Result.Error($"Could not delete cart item for customer: {customerId}");
+            _logger.LogError($"Could not delete cart item for customer: {currentUserId}");
+            return Result.Error($"Could not delete cart item for customer: {currentUserId}");
         }
 
         return Result.Success(_mapper.Map<CartItemResponseDto>(cartItem));

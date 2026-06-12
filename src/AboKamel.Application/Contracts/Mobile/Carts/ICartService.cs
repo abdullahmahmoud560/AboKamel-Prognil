@@ -1,4 +1,4 @@
-﻿using Capsula.Application.Dtos.Mobile.Carts;
+using Capsula.Application.Dtos.Mobile.Carts;
 using Capsula.Domain.Entities.Carts;
 using Microsoft.AspNetCore.Http;
 using Services.Core.DependencyInjection;
@@ -8,10 +8,10 @@ namespace Capsula.Application.Contracts.Mobile.Carts;
 
 public interface ICartService : IApplicationService, IScopedService
 {
-    Task<ResultAbstract<CartDetailedResponseDto>> GetCustomerCartDetailsAsync(string customerId);
-    Task<ResultAbstract<bool>> AddPrescriptionImageToCartAsync(string customerId, IFormFile ImageFile);
-    Task<ResultAbstract<bool>> AddPrescriptionVoiceRecordToCartAsync(string customerId, IFormFile VoiceFile);
-    Task<Cart> InitializeCustomerCartAsync(string customerId);
-    Task<Cart> GetCustomerCartAsync(string customerId);
+    Task<ResultAbstract<CartDetailedResponseDto>> GetCustomerCartDetailsAsync(string? customerId = null);
+    Task<ResultAbstract<bool>> AddPrescriptionImageToCartAsync(IFormFile ImageFile, string? customerId = null);
+    Task<ResultAbstract<bool>> AddPrescriptionVoiceRecordToCartAsync(IFormFile VoiceFile, string? customerId = null);
+    Task<Cart> InitializeCustomerCartAsync(string? customerId = null);
+    Task<Cart> GetCustomerCartAsync(string? customerId = null);
     Task<bool> CartExistsAsync(int cartId);
 }

@@ -1,4 +1,4 @@
-﻿using AboKamel.Domain.Entities.Advertisements;
+using AboKamel.Domain.Entities.Advertisements;
 using AboKamel.Domain.Entities.Areas;
 using AboKamel.Domain.Entities.Debts;
 using AboKamel.Domain.Entities.Notificationns;
@@ -17,6 +17,7 @@ using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Services.Domain.Entities.Users;
 using System.Reflection;
+using System.Reflection.Emit;
 
 namespace Services.Infrastructure.DbContexts;
 /// <summary>
@@ -55,6 +56,7 @@ public class CapsulaDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<Advertisement> Advertisements { get; set; }
     public DbSet<AdvertisementImage> AdvertisementImages { get; set; }
     public DbSet<Notification> Notifications { get; set; }
+    public DbSet<TwoFactorVerify> TwoFactorVerifies { get; set; }
     #endregion
 
     /// <summary>
@@ -68,6 +70,24 @@ public class CapsulaDbContext : IdentityDbContext<ApplicationUser>
 
         // Call the base method to perform any additional configuration
         base.OnModelCreating(builder);
+
+        builder.Entity<CartItem>()
+        .HasOne(ci => ci.Cart)
+        .WithMany(c => c.Items)
+        .HasForeignKey(ci => ci.CartId)
+        .OnDelete(DeleteBehavior.Cascade);
+
+        builder.Entity<OrderItem>()
+        .HasOne(oi => oi.Order)
+        .WithMany(o => o.Items)
+        .HasForeignKey(oi => oi.OrderId)
+        .OnDelete(DeleteBehavior.Cascade);
+
+        builder.Entity<Address>()
+        .HasOne(a => a.Customer)
+        .WithMany(c => c.Addresses)
+        .HasForeignKey(a => a.CustomerId)
+        .OnDelete(DeleteBehavior.Cascade);
     }
 
 }

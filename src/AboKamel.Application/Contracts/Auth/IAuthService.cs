@@ -1,4 +1,4 @@
-﻿using AboKamel.Application.Dtos.Dashboard.Roles;
+using AboKamel.Application.Dtos.Dashboard.Roles;
 using Services.Application.Dtos.Authentication;
 using Services.Core.DependencyInjection;
 using Services.Core.Results;
@@ -19,11 +19,11 @@ public interface IAuthService : IApplicationService, IScopedService
     Task<ResultAbstract<LoginResponseDto>> Login(LoginRequestDto loginRequestDto);
 
     /// <summary>
-    /// Registers a new user with the specified user details and password.
+    /// Registers a new user with the specified user details and password, then sends an OTP.
     /// </summary>
     /// <param name="user">The user to register.</param>
     /// <param name="password">The password for the new user.</param>
-    /// <returns>A task representing the asynchronous operation, with a result containing application user> as the registration attempt result.</returns>
+    /// <returns>A task representing the asynchronous operation, with a result containing application user as the registration attempt result.</returns>
     Task<ResultAbstract<ApplicationUser>> RegisterAsync(ApplicationUser user, string password);
 
     /// <summary>
@@ -47,16 +47,15 @@ public interface IAuthService : IApplicationService, IScopedService
     /// </summary>
     /// <param name="userId">The user id to retrieve its data.</param>
     /// <returns>A task representing the asynchronous operation, with a result as the update attempt result.</returns>
-    Task<ResultAbstract<BaseUserResponseDto>> GetUserAsync(string userId);
+    Task<ResultAbstract<BaseUserResponseDto>> GetUserAsync(string? userId = null);
 
     /// <summary>
     /// Changes the password for a specified user.
     /// </summary>
-    /// <param name="userId">The ID of the user whose password is to be changed.</param>
-    /// <param name="currentPassword">The current password of the user.</param>
-    /// <param name="newPassword">The new password for the user.</param>
+    /// <param name="changePasswordRequest">The change password request DTO.</param>
+    /// <param name="userId">The optional user ID (if not provided, uses current user).</param>
     /// <returns>A task representing the asynchronous operation, with a result as the change password attempt result.</returns>
-    Task<Result> ChangePasswordAsync(ChangePasswordRequestDto changePasswordRequest, string userId);
+    Task<Result> ChangePasswordAsync(ChangePasswordRequestDto changePasswordRequest, string? userId = null);
 
     /// <summary>
     /// Deletes a specified user.
@@ -83,8 +82,23 @@ public interface IAuthService : IApplicationService, IScopedService
     Task<ResultAbstract<List<RoleResponseDto>>> GetRolesAsync();
 
     /// <summary>
-    /// Creates an administrator account with predefined settings.
+    /// Initiates the forget password process and sends an OTP to the user's email.
     /// </summary>
-    /// <returns>A task representing the asynchronous operation.</returns>
-    Task CreateAdminAccount();
+    /// <param name="request">The forget password request DTO.</param>
+    /// <returns>A task representing the asynchronous operation, with a result.</returns>
+    Task<Result> ForgetPasswordAsync(ForgetPasswordRequestDto request);
+
+    /// <summary>
+    /// Verifies the OTP for a specific purpose.
+    /// </summary>
+    /// <param name="request">The verify OTP request DTO.</param>
+    /// <returns>A task representing the asynchronous operation, with a result (possibly with a token or confirmation).</returns>
+    Task<ResultAbstract<string>> VerifyOtpAsync(VerifyOtpRequestDto request);
+
+    /// <summary>
+    /// Resets the user's password after successful OTP verification.
+    /// </summary>
+    /// <param name="request">The reset password request DTO.</param>
+    /// <returns>A task representing the asynchronous operation, with a result.</returns>
+    Task<Result> ResetPasswordAsync(ResetPasswordRequestDto request);
 }

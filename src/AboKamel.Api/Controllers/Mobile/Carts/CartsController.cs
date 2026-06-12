@@ -1,11 +1,10 @@
-﻿using Capsula.Application.Contracts.Mobile.Carts;
+using Capsula.Application.Contracts.Mobile.Carts;
 using Capsula.Application.Dtos.Mobile.Carts;
 using Capsula.Application.Dtos.Mobile.Prescriptions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Services.Api.Controllers.Mobile;
 using Services.Core.Results;
-using System.Security.Claims;
 
 namespace Capsula.Api.Controllers.Mobile.Carts;
 
@@ -22,23 +21,20 @@ public class CartsController : MobileBaseController
     [Authorize(Roles = "Customer")]
     public async Task<ActionResult<ResultAbstract<CartDetailedResponseDto>>> GetCartDetailsAsync()
     {
-        var customerId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        return await _cartService.GetCustomerCartDetailsAsync(customerId);
+        return await _cartService.GetCustomerCartDetailsAsync();
     }
 
     [HttpPost("AddPrescriptionImage")]
     [Authorize(Roles = "Customer")]
     public async Task<ActionResult<ResultAbstract<bool>>> AddPrescriptionImageAsync([FromForm] FileRequestDto file)
     {
-        var customerId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        return await _cartService.AddPrescriptionImageToCartAsync(customerId, file.File);
+        return await _cartService.AddPrescriptionImageToCartAsync(file.File);
     }
 
     [HttpPost("AddVoiceRecord")]
     [Authorize(Roles = "Customer")]
     public async Task<ActionResult<ResultAbstract<bool>>> AddVoiceRecordAsync([FromForm] FileRequestDto file)
     {
-        var customerId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        return await _cartService.AddPrescriptionVoiceRecordToCartAsync(customerId, file.File);
+        return await _cartService.AddPrescriptionVoiceRecordToCartAsync(file.File);
     }
 }

@@ -1,4 +1,4 @@
-﻿using AboKamel.Application.Dtos.Dashboard.SellingUnits;
+using AboKamel.Application.Dtos.Dashboard.SellingUnits;
 using AboKamel.Domain.Entities.SellingUnits;
 using AutoMapper;
 using Capsula.Application.Contracts.Dashboard.Products;
@@ -7,7 +7,9 @@ using Capsula.Application.Dtos.Dashboard.Products;
 using Capsula.Domain.Entities.Products;
 using Capsula.Domain.Repositories.Products;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
+using Services.Core.Dtos;
 using Services.Core.Results;
 using Services.Infrastructure.DbContexts;
 
@@ -19,14 +21,17 @@ public class ProductService : CrudService<ProductRequestDto, Product, Dtos.Dashb
     private readonly IMapper _mapper;
     private readonly ILogger<Product> _logger;
     private readonly IImageService _imageService;
+    private readonly IMemoryCache _memoryCache;
+    private const string ProductCachePrefix = "products_page_";
 
 
-    public ProductService(IProductRepository repository, IMapper mapper, ILogger<Product> logger, IImageService imageService) : base(repository, mapper, logger)
+    public ProductService(IProductRepository repository, IMapper mapper, ILogger<Product> logger, IImageService imageService, IMemoryCache memoryCache) : base(repository, mapper, logger)
     {
         _productRepository = repository;
         _mapper = mapper;
         _logger = logger;
         _imageService = imageService;
+        _memoryCache = memoryCache;
     }
 
     public async Task<ResultAbstract<ProductDetailedResponseDto>> GetProductDetailsAsync(int productId)
@@ -123,5 +128,58 @@ public class ProductService : CrudService<ProductRequestDto, Product, Dtos.Dashb
     {
         var count = await _productRepository.GetBestSellingProductsCountAsync();
         return Result.Success(count);
+    }
+
+    public async Task<ResultAbstract<PagedResultDto<ProductResponseDto>>> GetAllProductsAsync(int pageNumber = 1, int pageSize = 10)
+    {
+        var cacheKey = $"{ProductCachePrefix}{pageNumber}_size_{pageSize}";
+
+        if (_memoryCache.TryGetValue(cacheKey, out ResultAbstract<PagedResultDto<ProductResponseDto>>? cachedResult))
+        {
+            return cachedResult!;
+        }
+
+        var (products, totalCount) = await _productRepository.GetPagedProductsAsync(pageNumber, pageSize);
+
+        var response = new PagedResultDto<ProductResponseDto>(totalCount, _mapper.Map<List<ProductResponseDto>>(products));
+        var result = Result.Success(response);
+
+        var cacheEntryOptions = new MemoryCacheEntryOptions()
+            .SetAbsoluteExpiration(TimeSpan.FromMinutes(5));
+
+        _memoryCache.Set(cacheKey, result, cacheEntryOptions);
+
+        return result;
+    }
+
+    private void ClearProductCache()
+    {
+        var cacheEntriesCollectionDefinition = typeof(MemoryCache).GetProperty("EntriesCollection", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        var cacheEntriesCollection = cacheEntriesCollectionDefinition?.GetValue(_memoryCache) as dynamic;
+
+        if (cacheEntriesCollection == null) return;
+
+        foreach (var cacheEntry in cacheEntriesCollection)
+        {
+            var cacheKey = cacheEntry.GetType().GetProperty("Key")?.GetValue(cacheEntry) as string;
+            if (cacheKey != null && cacheKey.StartsWith(ProductCachePrefix))
+            {
+                _memoryCache.Remove(cacheKey);
+            }
+        }
+    }
+
+    public override async Task<ResultAbstract<ProductResponseDto>> UpdateAsync(ProductRequestDto request, int id)
+    {
+        var result = await base.UpdateAsync(request, id);
+        ClearProductCache();
+        return result;
+    }
+
+    public override async Task<ResultAbstract<ProductResponseDto>> DeleteAsync(int id)
+    {
+        var result = await base.DeleteAsync(id);
+        ClearProductCache();
+        return result;
     }
 }

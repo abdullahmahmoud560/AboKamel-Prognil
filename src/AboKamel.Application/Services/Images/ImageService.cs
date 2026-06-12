@@ -7,9 +7,20 @@ namespace Capsula.Application.Services.Images;
 
 public class ImageService : IImageService
 {
-    private static readonly List<string> AllowedExtensions = new() { ".png", ".jpg", ".jpeg", ".webp" };
-    private const long MaxAllowedImageSize = 2 * 1024 * 1024; // 2 MB
-    private const string DefaultImagePath = "images/No_Image.png";
+    // Added ".pdf" to the allowed extensions list
+    private static readonly List<string> AllowedExtensions = new()
+    {
+        ".jpg", ".jpeg", ".png", ".webp", // Images
+        ".mp3", ".wav", ".aac",          // Audio
+        ".mp4", ".mov", ".avi",          // Video
+        ".pdf"                           // Documents
+    };
+
+    // Max file size set to 50MB
+    private const long MaxAllowedSize = 50 * 1024 * 1024;
+
+    // Default image used as a fallback
+    private const string DefaultPath = "uploads/default.png";
 
     private readonly IWebHostEnvironment _environment;
     private readonly IHttpContextAccessor _httpContextAccessor;
@@ -20,92 +31,72 @@ public class ImageService : IImageService
         _httpContextAccessor = httpContextAccessor;
     }
 
-    /// <summary>
-    /// Validates and saves an uploaded image. Returns relative path (e.g., "images/abc.png").
-    /// Returns default image path if null.
-    /// </summary>
-    public async Task SaveImageAsync(string relativePath, IFormFile? image)
+    // Save the file to the physical server storage
+    public async Task SaveImageAsync(string relativePath, IFormFile? file)
     {
-        if(relativePath != DefaultImagePath)
-        {
-            var fullPath = Path.Combine(_environment.WebRootPath, relativePath);
+        if (file == null) return;
 
-            Directory.CreateDirectory(Path.GetDirectoryName(fullPath)!); // Ensure folder exists
+        ValidateImage(file);
 
-            await using (var stream = new FileStream(fullPath, FileMode.Create))
-            {
-                await image.CopyToAsync(stream);
-            }
-        }
+        var fullPath = Path.Combine(_environment.WebRootPath, relativePath);
+
+        // Ensure the directory exists
+        Directory.CreateDirectory(Path.GetDirectoryName(fullPath)!);
+
+        await using var stream = new FileStream(fullPath, FileMode.Create);
+        await file.CopyToAsync(stream);
     }
 
-    public string GetImageRelativePath(IFormFile? image)
+    // Determine storage folder and generate a unique file name
+    public string GetImageRelativePath(IFormFile? file)
     {
-        if (image == null)
-            return DefaultImagePath;
+        if (file == null) return DefaultPath;
 
-        var extension = Path.GetExtension(image.FileName).ToLowerInvariant();
-        var imgName = $"{Guid.NewGuid()}{extension}";
-        var relativePath = Path.Combine("images", imgName);
+        var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
+        var fileName = $"{Guid.NewGuid()}{extension}";
 
-        return relativePath;
+        // Store images in 'images' folder, media/documents in 'uploads'
+        var folder = file.ContentType.StartsWith("image/") ? "images" : "uploads";
+        return Path.Combine(folder, fileName);
     }
 
-    public void ValidateImage(IFormFile? image)
+    // Validate file extension and size
+    public void ValidateImage(IFormFile? file)
     {
-        if(image is not null)
-        {
-            var extension = Path.GetExtension(image.FileName).ToLowerInvariant();
-            if (!AllowedExtensions.Contains(extension))
-                throw new ImageValidationException($"Invalid file extension '{extension}'. Allowed: {string.Join(", ", AllowedExtensions)}");
+        if (file == null) throw new ImageValidationException("File is required.");
 
-            if (image.Length > MaxAllowedImageSize)
-                throw new ImageValidationException($"File size exceeds the allowed limit of {MaxAllowedImageSize / 1024 / 1024} MB.");
-        }
+        var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
+        if (!AllowedExtensions.Contains(extension))
+            throw new ImageValidationException("Invalid file extension.");
+
+        if (file.Length > MaxAllowedSize)
+            throw new ImageValidationException("File size exceeds the allowed limit.");
     }
 
-    /// <summary>
-    /// Deletes an image if it exists (ignores default image).
-    /// </summary>
-    public void DeleteImage(string? imagePath)
+    // Delete a file from the server
+    public void DeleteImage(string? path)
     {
-        if (string.IsNullOrWhiteSpace(imagePath) || imagePath == DefaultImagePath)
-            return;
+        if (string.IsNullOrWhiteSpace(path) || path == DefaultPath) return;
 
-        var fullPath = Path.Combine(_environment.WebRootPath, imagePath.TrimStart('/', '\\'));
-
-        if (File.Exists(fullPath))
-        {
-            File.Delete(fullPath);
-        }
+        var fullPath = Path.Combine(_environment.WebRootPath, path.TrimStart('/', '\\'));
+        if (File.Exists(fullPath)) File.Delete(fullPath);
     }
 
-    /// <summary>
-    /// Generates absolute URL from a relative image path.
-    /// </summary>
-    public string? GenerateUrl(string? imagePath)
+    // Generate a public URL for the file
+    public string? GenerateUrl(string? path)
     {
-        if (string.IsNullOrEmpty(imagePath))
-        {
-            imagePath = DefaultImagePath;
-        }
-
+        if (string.IsNullOrEmpty(path)) path = DefaultPath;
         var request = _httpContextAccessor.HttpContext?.Request;
-        if (request == null)
-            return imagePath; // fallback to relative
+        if (request == null) return path;
 
-        // Normalize path (replace backslashes with forward slashes)
-        var normalizedPath = imagePath.Replace("\\", "/").TrimStart('/');
-
+        var normalizedPath = path.Replace("\\", "/").TrimStart('/');
         return $"{request.Scheme}://{request.Host}/{normalizedPath}";
     }
 
+    // Convert public URL back to a relative path
     public string ExtractImagePath(string url)
     {
-        if (string.IsNullOrWhiteSpace(url))
-            return string.Empty;
-
-        var uri = new Uri(url);
-        return uri.AbsolutePath.TrimStart('/');
+        if (string.IsNullOrWhiteSpace(url)) return string.Empty;
+        return new Uri(url).AbsolutePath.TrimStart('/');
     }
 }

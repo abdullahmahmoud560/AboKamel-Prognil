@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using Capsula.Application.Contracts;
 using Capsula.Application.Dtos;
 using Microsoft.Extensions.Logging;
@@ -25,14 +25,14 @@ public class CrudService<TRequestDto, TEntity, TResponseDto, TDetailedResponseDt
         _logger = logger;
     }
 
-    public async Task<ResultAbstract<IEnumerable<TResponseDto>>> GetAllAsync()
+    public virtual async Task<ResultAbstract<IEnumerable<TResponseDto>>> GetAllAsync()
     {
         var records = await _repository.GetAllAsync();
         var result = _mapper.Map<IEnumerable<TResponseDto>>(records);
         return Result.Success(result);
     }
 
-    public async Task<ResultAbstract<TDetailedResponseDto>> GetByIdAsync(TKey id)
+    public virtual async Task<ResultAbstract<TDetailedResponseDto>> GetByIdAsync(TKey id)
     {
         var record = await _repository.GetByIdAsync(id);
         if (record == null)
@@ -43,7 +43,7 @@ public class CrudService<TRequestDto, TEntity, TResponseDto, TDetailedResponseDt
         return Result.Success(_mapper.Map<TDetailedResponseDto>(record));
     }
 
-    public async Task<ResultAbstract<TResponseDto>> CreateAsync(TRequestDto request)
+    public virtual async Task<ResultAbstract<TResponseDto>> CreateAsync(TRequestDto request)
     {
         var record = _mapper.Map<TEntity>(request);
         bool isRecordAdded = await _repository.AddAsync(record);
@@ -58,7 +58,7 @@ public class CrudService<TRequestDto, TEntity, TResponseDto, TDetailedResponseDt
         return Result.Success(_mapper.Map<TResponseDto>(record));
     }
 
-    public async Task<ResultAbstract<TResponseDto>> UpdateAsync(TRequestDto request, TKey id)
+    public virtual async Task<ResultAbstract<TResponseDto>> UpdateAsync(TRequestDto request, TKey id)
     {
         var record = await _repository.GetByIdAsync(id);
         if (record == null)
@@ -80,7 +80,7 @@ public class CrudService<TRequestDto, TEntity, TResponseDto, TDetailedResponseDt
         return Result.Success(_mapper.Map<TResponseDto>(record));
     }
 
-    public async Task<ResultAbstract<TResponseDto>> DeleteAsync(TKey id)
+    public virtual async Task<ResultAbstract<TResponseDto>> DeleteAsync(TKey id)
     {
         var record = await _repository.GetByIdAsync(id);
         if (record == null)

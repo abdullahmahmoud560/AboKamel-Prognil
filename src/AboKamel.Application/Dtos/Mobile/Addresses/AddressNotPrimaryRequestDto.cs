@@ -1,20 +1,20 @@
-﻿using Capsula.Core.Enums;
-using System.Text.Json.Serialization;
+﻿using System.Text.Json.Serialization;
 
 namespace Capsula.Application.Dtos.Mobile.Addresses;
 
 public class AddressNotPrimaryRequestDto : BaseRequestDto
 {
-    public string? Region { get; set; } = string.Empty;
+    public string? Region { get; set; }
 
-    public string? BuildingName { get; set; } = string.Empty;
+    public string? BuildingName { get; set; }
 
-    public string? ApartmentNumber { get; set; } = string.Empty;
+    public string? ApartmentNumber { get; set; }
 
     public string? FloorNumber { get; set; }
 
-    public string PhoneNumber { get; set; } = string.Empty;
-    public string DetailedAddress { get; set; } = string.Empty;
+    public string? PhoneNumber { get; set; }
+
+    public string? DetailedAddress { get; set; }
 
     public string? DeliveryInstructions { get; set; }
 
@@ -23,5 +23,5 @@ public class AddressNotPrimaryRequestDto : BaseRequestDto
     public decimal? Longitude { get; set; }
 
     [JsonIgnore]
-    public string CustomerId { get; set; } = string.Empty;
+    public string? CustomerId { get; set; }
 }

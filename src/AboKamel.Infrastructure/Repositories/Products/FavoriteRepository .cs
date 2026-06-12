@@ -17,7 +17,14 @@ public class FavoriteRepository : Repository<Favorite, int>, IFavoriteRepository
 
     public async Task<IEnumerable<Favorite>> GetFavoritesByUserIdAsync(string userId)
     {
-        return await _context.Favorites.Include(f => f.Product).Where(f => f.UserId == userId).ToListAsync();
+        var count = await _context.Favorites.CountAsync();
+
+        var data = await _context.Favorites
+            .Include(f => f.Product)
+            .Where(f => f.UserId == userId)
+            .ToListAsync();
+
+        return data;
     }
 
     public async Task<Favorite> GetFavoriteByProductIdAsync(string userId, int productId)

@@ -10,8 +10,10 @@ using Capsula.Domain.Entities.Orders;
 using Capsula.Domain.Entities.Products;
 using Capsula.Domain.Repositories.Addresses;
 using Capsula.Domain.Repositories.Carts;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Services.Core.Results;
+using System.Security.Claims;
 
 namespace AboKamel.Application.Services.Mobile.Orders;
 
@@ -24,19 +26,32 @@ public class OrderService : IOrderService
     private readonly ISellingUnitRepository _sellingUnitRepository;
     private readonly IMapper _mapper;
     private readonly ILogger<Order> _logger;
+    private readonly IHttpContextAccessor _httpContextAccessor;
 
-    public OrderService(IOrderRepository orderRepository, ICartRepository cartRepository, IAddressRepository addressRepository, IMapper mapper, ISellingUnitRepository sellingUnitRepository)
+    public OrderService(IOrderRepository orderRepository, ICartRepository cartRepository, IAddressRepository addressRepository, IMapper mapper, ISellingUnitRepository sellingUnitRepository, IHttpContextAccessor httpContextAccessor)
     {
         _orderRepository = orderRepository;
         _cartRepository = cartRepository;
         _addressRepository = addressRepository;
         _mapper = mapper;
         _sellingUnitRepository = sellingUnitRepository;
+        _httpContextAccessor = httpContextAccessor;
     }
 
-    public async Task<ResultAbstract<OrderResponseDto>> CreateOrderAsync(string customerId)
+    private string GetCurrentUserId()
     {
-        var cart = await _cartRepository.GetCustomerCartDetailsAsync(customerId);
+        var userId = _httpContextAccessor.HttpContext?.User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrEmpty(userId))
+        {
+            throw new UnauthorizedAccessException("User not authenticated.");
+        }
+        return userId;
+    }
+
+    public async Task<ResultAbstract<OrderResponseDto>> CreateOrderAsync(string? customerId = null)
+    {
+        var currentUserId = customerId ?? GetCurrentUserId();
+        var cart = await _cartRepository.GetCustomerCartDetailsAsync(currentUserId);
 
         if(cart is null || !cart.Items.Any())
         {
@@ -71,23 +86,26 @@ public class OrderService : IOrderService
         return Result.Success(orderDto);
     }
 
-    public async Task<ResultAbstract<List<OrderResponseDto>>> GetCustomerOrdersAsync(string customerId)
+    public async Task<ResultAbstract<List<OrderResponseDto>>> GetCustomerOrdersAsync(string? customerId = null)
     {
-        var orders = await _orderRepository.GetCustomerOrdersAsync(customerId);
+        var currentUserId = customerId ?? GetCurrentUserId();
+        var orders = await _orderRepository.GetCustomerOrdersAsync(currentUserId);
 
         return Result.Success(_mapper.Map<List<OrderResponseDto>>(orders));
     }
 
-    public async Task<ResultAbstract<OrderResponseDto>> GetCustomerOrderOrderByIdAsync(string customerId, int orderId)
+    public async Task<ResultAbstract<OrderResponseDto>> GetCustomerOrderOrderByIdAsync(int orderId, string? customerId = null)
     {
-        var order = await _orderRepository.GetCustomerOrderByIdAsync(customerId, orderId);
+        var currentUserId = customerId ?? GetCurrentUserId();
+        var order = await _orderRepository.GetCustomerOrderByIdAsync(currentUserId, orderId);
 
         return Result.Success(_mapper.Map<OrderResponseDto>(order));
     }
 
-    public async Task<ResultAbstract<List<ProductResponseDto>>> GetCustomerLastOrderedProductsAsync(string customerId)
+    public async Task<ResultAbstract<List<ProductResponseDto>>> GetCustomerLastOrderedProductsAsync(string? customerId = null)
     {
-        var lastProducts = await _orderRepository.GetCustomerLastOrderedProductsAsync(customerId, 5);
+        var currentUserId = customerId ?? GetCurrentUserId();
+        var lastProducts = await _orderRepository.GetCustomerLastOrderedProductsAsync(currentUserId, 5);
         return Result.Success(_mapper.Map<List<ProductResponseDto>>(lastProducts));
     }
 }

@@ -1,4 +1,4 @@
-﻿using Capsula.Domain.Entities.Products;
+using Capsula.Domain.Entities.Products;
 using Capsula.Domain.Repositories.Products;
 using Microsoft.EntityFrameworkCore;
 using Services.Infrastructure.DbContexts;
@@ -31,8 +31,8 @@ public class ProductRepository : Repository<Product, int>, IProductRepository
         return await _context.Products
             .Include(p => p.ProductSellingUnits)
                 .ThenInclude(u => u.SellingUnit)
-                .OrderByDescending(p => p.CreatedDate)
-                .Take(6)
+            .OrderByDescending(p => p.CreatedDate)
+            .Take(6)
             .ToListAsync();
     }
 
@@ -122,5 +122,19 @@ public class ProductRepository : Repository<Product, int>, IProductRepository
             .Select(oi => oi.ProductId)
             .Distinct()
             .CountAsync();
+    }
+
+    public async Task<(List<Product> Products, int TotalCount)> GetPagedProductsAsync(int pageNumber, int pageSize)
+    {
+        var totalCount = await _context.Products.CountAsync();
+        var products = await _context.Products
+            .Include(p => p.Brand)
+            .Include(p => p.Category)
+            .Include(p => p.ProductSellingUnits)
+            .ThenInclude(psu => psu.SellingUnit)
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+        return (products, totalCount);
     }
 }

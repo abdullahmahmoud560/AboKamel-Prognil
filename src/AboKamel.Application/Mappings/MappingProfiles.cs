@@ -9,7 +9,6 @@ using AutoMapper;
 using Capsula.Application.Mappings.Dashboard.Brands;
 using Capsula.Application.Mappings.Dashboard.Categories;
 using Capsula.Application.Mappings.Dashboard.Products;
-using Capsula.Application.Mappings.Mobile.Addresses;
 using Capsula.Application.Mappings.Mobile.Carts;
 using Capsula.Application.Mappings.Mobile.Products;
 using Capsula.Application.Mappings.Mobile.Supports;

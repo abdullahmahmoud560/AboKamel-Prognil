@@ -1,4 +1,4 @@
-﻿using Capsula.Domain.Entities.Addresses;
+using Capsula.Domain.Entities.Addresses;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -36,5 +36,10 @@ public class AddressConfiguration : IEntityTypeConfiguration<Address>
 
         builder.Property(x => x.Longitude)
             .HasColumnType("decimal(9,6)");
+
+        builder.HasOne(a => a.Customer)
+            .WithMany()
+            .HasForeignKey(a => a.CustomerId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }

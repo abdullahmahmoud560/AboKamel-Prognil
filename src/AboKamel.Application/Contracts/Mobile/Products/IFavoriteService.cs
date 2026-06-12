@@ -7,6 +7,6 @@ namespace Capsula.Application.Contracts.Mobile.Products;
 
 public interface IFavoriteService : ICrudService<FavoriteRequestDto, Favorite, FavoriteResponseDto, FavoriteDetailedResponseDto, int>, IApplicationService, IScopedService
 {
-    Task<ResultAbstract<IEnumerable<FavoriteResponseDto>>> GetAllFavoritesByUserIdAsync(string userId);
-    Task<ResultAbstract<bool>> DeleteFavoriteByProductIdAsync(FavoriteRequestDto favoriteRequest);
+    Task<ResultAbstract<IEnumerable<FavoriteResponseDto>>> GetAllFavoritesByUserIdAsync(string? userId = null);
+    Task<ResultAbstract<bool>> DeleteFavoriteByProductIdAsync(FavoriteRequestDto favoriteRequest, string? userId = null);
 }

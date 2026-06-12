@@ -11,17 +11,14 @@ public class SupportValidator : AbstractValidator<SupportRequestDto>
             .NotEmpty().WithMessage("Full Name is required.")
             .MaximumLength(150).WithMessage("Full Name cannot exceed 150 characters.");
 
-        RuleFor(x => x.PhoneNumber)
-            .NotEmpty().WithMessage("Phone number is required")
-            .Matches(@"^(?:\+201|01)(0|1|2|5)[0-9]{8}$")
-            .WithMessage("Phone number must be a valid Egyptian mobile number (e.g., +2010XXXXXXXX or 010XXXXXXXX)");
-
         RuleFor(x => x.Email)
             .NotEmpty().WithMessage("Email is required.")
             .EmailAddress().WithMessage("Email format is invalid.")
             .MaximumLength(150).WithMessage("Email must not exceed 150 characters.");
 
-        RuleFor(s => s.Description)
-            .MaximumLength(1000).WithMessage("Description cannot exceed 1000 characters.");
+        RuleFor(x => x.Message)
+            .NotEmpty().WithMessage("Message is required.")
+            .MinimumLength(10).WithMessage("Message must be at least 10 characters long.")
+            .MaximumLength(1000).WithMessage("Message cannot exceed 1000 characters.");
     }
 }

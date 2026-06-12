@@ -1,4 +1,5 @@
-﻿using AboKamel.Application.Dtos.Dashboard.Roles;
+using AboKamel.Application.Dtos.Authentication.Users.Customers;
+using AboKamel.Application.Dtos.Dashboard.Roles;
 using Capsula.Application.Dtos.Authentication.Users.Customers;
 using Capsula.Domain.Entities.Users.Customers;
 using Microsoft.AspNetCore.Identity;
@@ -18,6 +19,8 @@ public static class AuthMapping
 
 
         map.CreateMap<CustomerRequestDto, Customer>();
+        map.CreateMap<RegisterCustomerRequestDto, Customer>();
+        map.CreateMap<UpdateCustomerRequestDto, Customer>();
         map.CreateMap<Customer, CustomerResponseDto>();
 
         map.CreateMap<IdentityRole, RoleResponseDto>();

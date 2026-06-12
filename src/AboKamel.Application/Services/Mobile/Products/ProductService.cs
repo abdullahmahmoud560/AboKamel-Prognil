@@ -1,8 +1,9 @@
-﻿using AutoMapper;
+using AutoMapper;
 using Capsula.Application.Contracts.Mobile.Products;
 using Capsula.Application.Contracts.Images;
 using Capsula.Application.Dtos.Mobile.Products;
 using Capsula.Domain.Repositories.Products;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Services.Core.Results;
@@ -13,6 +14,7 @@ using AboKamel.Application.Dtos.Dashboard.Areas;
 using AboKamel.Application.Dtos.Dashboard.SellingUnits;
 using Capsula.Domain.Entities.Users.Customers;
 using Capsula.Application.Dtos.Dashboard.Products;
+using System.Security.Claims;
 
 namespace Capsula.Application.Services.Mobile.Products;
 
@@ -22,28 +24,41 @@ public class ProductService : IProductService
     private readonly IMapper _mapper;
     private readonly ILogger<ProductResponseDto> _logger;
     private readonly IImageService _imageService;
+    private readonly IHttpContextAccessor _httpContextAccessor;
 
 
-    public ProductService(IProductRepository repository, IMapper mapper, ILogger<ProductResponseDto> logger, IImageService imageService)
+    public ProductService(IProductRepository repository, IMapper mapper, ILogger<ProductResponseDto> logger, IImageService imageService, IHttpContextAccessor httpContextAccessor)
     {
         _productRepository = repository;
         _mapper = mapper;
         _logger = logger;
         _imageService = imageService;
+        _httpContextAccessor = httpContextAccessor;
     }
 
-    public async Task<ResultAbstract<List<ProductFavoriteResponseDto>>> GetAllProductsWithFavoriteAsync(string userId)
+    private string GetCurrentUserId()
     {
+        var userId = _httpContextAccessor.HttpContext?.User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrEmpty(userId))
+        {
+            throw new UnauthorizedAccessException("User not authenticated.");
+        }
+        return userId;
+    }
+
+    public async Task<ResultAbstract<List<ProductFavoriteResponseDto>>> GetAllProductsWithFavoriteAsync(string? userId = null)
+    {
+        var currentUserId = userId ?? GetCurrentUserId();
         CapsulaDbContext dbContext = (CapsulaDbContext)_productRepository.GetDbContext();
 
         Customer? customer = null;
-        bool hasUser = !string.IsNullOrWhiteSpace(userId);
+        bool hasUser = !string.IsNullOrWhiteSpace(currentUserId);
 
         if (hasUser)
         {
             customer = await dbContext.Customers
                 .AsNoTracking()
-                .SingleOrDefaultAsync(c => c.Id == userId);
+                .SingleOrDefaultAsync(c => c.Id == currentUserId);
         }
 
         var query = dbContext.Products.AsQueryable();
@@ -64,13 +79,13 @@ public class ProductService : IProductService
                 Id = p.Id,
                 Name = p.Name,
                 Description = p.Description,
-                Price = p.ProductSellingUnits.FirstOrDefault().Price,
+                Price = p.ProductSellingUnits.FirstOrDefault()!.Price,
                 ImageUrl = _imageService.GenerateUrl(p.ImagePath),
                 BrandId = p.BrandId,
                 BrandName = p.Brand.Name,
                 CategoryId = p.CategoryId,
                 CategoryName = p.Category.Name,
-                IsFavorite = hasUser && p.Favorites.Any(f => f.UserId == userId)
+                IsFavorite = hasUser && p.Favorites.Any(f => f.UserId == currentUserId)
             })
             .ToListAsync();
 
@@ -83,8 +98,9 @@ public class ProductService : IProductService
         return Result.Success(_mapper.Map<List<ProductFavoriteDetailedResponseDto>>(products));
     }
 
-    public async Task<ResultAbstract<List<ProductFavoriteDetailedResponseDto>>> SearchProductsAsync(Dtos.Mobile.Products.ProductSearchRequestDto searchTerm, string userId)
+    public async Task<ResultAbstract<List<ProductFavoriteDetailedResponseDto>>> SearchProductsAsync(Dtos.Mobile.Products.ProductSearchRequestDto searchTerm, string? userId = null)
     {
+        var currentUserId = userId ?? GetCurrentUserId();
         CapsulaDbContext dbContext = (CapsulaDbContext)_productRepository.GetDbContext();
         var query = dbContext.Products.AsQueryable();
 
@@ -108,11 +124,11 @@ public class ProductService : IProductService
             query = query.Where(p => p.Description.Contains(searchTerm.ProductDescription));
         }
 
-        bool hasUser = !string.IsNullOrWhiteSpace(userId);
+        bool hasUser = !string.IsNullOrWhiteSpace(currentUserId);
         Customer customer;
         if (hasUser)
         {
-            customer = await dbContext.Customers.SingleOrDefaultAsync(u => u.Id == userId);
+            customer = await dbContext.Customers.SingleOrDefaultAsync(u => u.Id == currentUserId);
 
             if (customer != null)
             {
@@ -157,7 +173,7 @@ public class ProductService : IProductService
                 SellingUnitName = s.SellingUnit.Name
                 
             }).ToList(),
-            IsFavorite = hasUser && p.Favorites.Any(f => f.UserId == userId)
+            IsFavorite = hasUser && p.Favorites.Any(f => f.UserId == currentUserId)
         }).Take(12).ToListAsync();
 
         return Result.Success(products);

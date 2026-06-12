@@ -1,13 +1,9 @@
-﻿using Capsula.Application.Contracts.Mobile.Payments;
-using Capsula.Application.Services.Mobile.Payments;
 using Capsula.Application.Validators.Dashboard.Brands;
-using Capsula.Core.Dtos.Payments;
 using FluentValidation;
 using FluentValidation.AspNetCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Options;
 using Microsoft.OpenApi.Models;
 using Services.Application.Mappings;
 using Services.Core.DependencyInjection;
@@ -30,6 +26,7 @@ public static class ServicesRegisteration
     /// <returns>The IServiceCollection with Parkilo services added.</returns>
     public static IServiceCollection AddServices(this IServiceCollection services)
     {
+        services.AddHttpContextAccessor();
         services.AddRepositoryServices();
         var serviceTypes = Assembly.GetExecutingAssembly().ExportedTypes
             .Where(t => t.IsAssignableTo(typeof(IApplicationService)) && !t.IsInterface && !t.IsAbstract).ToList();
@@ -59,8 +56,6 @@ public static class ServicesRegisteration
             //{
             //    options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
             //});
-        services.Configure<PaymobSettings>(configuration.GetSection("Paymob"));
-        services.AddHttpClient<IPaymentService, PaymentService>();
         services.AddFluentValidationAutoValidation(fv =>
         {
             fv.DisableDataAnnotationsValidation = true;

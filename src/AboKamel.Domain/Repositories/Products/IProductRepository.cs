@@ -14,4 +14,5 @@ public interface IProductRepository : IRepository<Product, int>, IApplicationSer
     Task<List<Product>> GetBestSellingProductsAsync(int take = 10);
     Task<int> GetLowStockProductsCountAsync(int threshold = 10);
     Task<int> GetBestSellingProductsCountAsync();
+    Task<(List<Product> Products, int TotalCount)> GetPagedProductsAsync(int pageNumber, int pageSize);
 }

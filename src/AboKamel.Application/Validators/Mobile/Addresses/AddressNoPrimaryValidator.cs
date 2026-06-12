@@ -1,40 +1,40 @@
 ﻿using Capsula.Application.Dtos.Mobile.Addresses;
 using FluentValidation;
 
-namespace Capsula.Application.Validators.Mobile.Addresses;
-
 public class AddressNoPrimaryValidator : AbstractValidator<AddressNotPrimaryRequestDto>
 {
     public AddressNoPrimaryValidator()
     {
         RuleFor(x => x.Region)
-            .MaximumLength(100).WithMessage("Region must not exceed 100 characters");
+            .MaximumLength(100).WithMessage("المنطقة يجب ألا تتجاوز 100 حرف");
 
         RuleFor(x => x.BuildingName)
-            .MaximumLength(150).WithMessage("Building name must not exceed 150 characters");
+            .MaximumLength(150).WithMessage("اسم المبنى يجب ألا يتجاوز 150 حرف");
 
         RuleFor(x => x.ApartmentNumber)
-            .MaximumLength(20).WithMessage("Apartment number must not exceed 20 characters");
+            .MaximumLength(20).WithMessage("رقم الشقة يجب ألا يتجاوز 20 حرف");
 
         RuleFor(x => x.FloorNumber)
-            .MaximumLength(20).WithMessage("Floor number must not exceed 20 characters");
+            .MaximumLength(20).WithMessage("رقم الطابق يجب ألا يتجاوز 20 حرف");
 
         RuleFor(x => x.PhoneNumber)
-            .NotEmpty().WithMessage("Phone number is required")
             .Matches(@"^(?:\+201|01)(0|1|2|5)[0-9]{8}$")
-            .WithMessage("Phone number must be a valid Egyptian mobile number (e.g., +2010XXXXXXXX or 010XXXXXXXX)");
+            .WithMessage("رقم الهاتف يجب أن يكون رقم موبايل مصري صحيح")
+            .When(x => !string.IsNullOrEmpty(x.PhoneNumber));
 
         RuleFor(x => x.DetailedAddress)
-            .NotEmpty().WithMessage("Detailed address is required")
-            .MaximumLength(20).WithMessage("Detailed Address must not exceed 500 characters");
+            .MaximumLength(500).WithMessage("العنوان التفصيلي يجب ألا يتجاوز 500 حرف")
+            .When(x => !string.IsNullOrEmpty(x.DetailedAddress));
 
         RuleFor(x => x.DeliveryInstructions)
-            .MaximumLength(250).WithMessage("Delivery instructions must not exceed 250 characters");
+            .MaximumLength(250).WithMessage("تعليمات التوصيل يجب ألا تتجاوز 250 حرف");
 
         RuleFor(x => x.Latitude)
-            .InclusiveBetween(-90, 90).WithMessage("Latitude must be between -90 and 90");
+            .InclusiveBetween(-90, 90).WithMessage("خط العرض يجب أن يكون بين -90 و 90")
+            .When(x => x.Latitude.HasValue);
 
         RuleFor(x => x.Longitude)
-            .InclusiveBetween(-180, 180).WithMessage("Longitude must be between -180 and 180");
+            .InclusiveBetween(-180, 180).WithMessage("خط الطول يجب أن يكون بين -180 و 180")
+            .When(x => x.Longitude.HasValue);
     }
 }

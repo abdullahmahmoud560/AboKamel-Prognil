@@ -41,7 +41,7 @@ public class CustomerService : ICustomerService
 
         if (customer is null)
         {
-            return Result.Error("Customer does not exist.");
+            return Result.Error("العميل غير موجود.");
         }
 
         customer.Active = active;
@@ -61,7 +61,7 @@ public class CustomerService : ICustomerService
         // First, validate password matches confirm password (redundant but adds extra layer of safety in service layer)
         if (request.Password != request.ConfirmPassword)
         {
-            return Result.Error("Password and ConfirmPassword do not match");
+            return Result.Error("كلمة المرور وتأكيد كلمة المرور غير متطابقتين");
         }
 
         var role = RoleName.Customer;
@@ -84,10 +84,10 @@ public class CustomerService : ICustomerService
 
         if (!customerAdded.IsSuccess)
         {
-            return Result.Error(customerAdded.Errors.FirstOrDefault() ?? "An error occurred");
+            return Result.Error(customerAdded.Errors.FirstOrDefault() ?? "حدث خطأ");
         }
 
-        _logger.LogInformation("customer added successfully to the database");
+        _logger.LogInformation("تم إضافة العميل إلى قاعدة البيانات بنجاح");
         return Result.Success(_mapper.Map<CustomerResponseDto>(customer));
     }
 
@@ -98,7 +98,7 @@ public class CustomerService : ICustomerService
 
         if (customer == null)
         {
-            return Result.Error("Customer not found.");
+            return Result.Error("العميل غير موجود.");
         }
 
         // Update only the provided fields
@@ -135,11 +135,11 @@ public class CustomerService : ICustomerService
         if (!updateResult.Succeeded)
         {
             var errors = string.Join(", ", updateResult.Errors.Select(e => e.Description));
-            _logger.LogError($"Failed to update customer: {errors}");
-            return Result.Error($"Failed to update customer: {errors}");
+            _logger.LogError($"فشل تحديث العميل: {errors}");
+            return Result.Error($"فشل تحديث العميل: {errors}");
         }
 
-        _logger.LogInformation($"Customer with ID {userId} updated successfully");
+        _logger.LogInformation($"العميل رقم {userId} تم تحديثه بنجاح");
         return Result.Success(_mapper.Map<CustomerResponseDto>(customer));
     }
 
@@ -152,7 +152,7 @@ public class CustomerService : ICustomerService
 
         if (customer == null)
         {
-            return Result.Error("Customer not found.");
+            return Result.Error("العميل غير موجود.");
         }
 
         // Map properties from the old CustomerRequestDto
@@ -164,11 +164,11 @@ public class CustomerService : ICustomerService
         if (!updateResult.Succeeded)
         {
             var errors = string.Join(", ", updateResult.Errors.Select(e => e.Description));
-            _logger.LogError($"Failed to update customer: {errors}");
-            return Result.Error($"Failed to update customer: {errors}");
+            _logger.LogError($"فشل تحديث العميل: {errors}");
+            return Result.Error($"فشل تحديث العميل: {errors}");
         }
 
-        _logger.LogInformation($"Customer with ID {id} updated successfully (backward compatible)");
+        _logger.LogInformation($"العميل رقم {id} تم تحديثه بنجاح (backward compatible)");
         return Result.Success(_mapper.Map<CustomerResponseDto>(customer));
     }
 
@@ -177,7 +177,7 @@ public class CustomerService : ICustomerService
         var user = await _userManager.FindByIdAsync(userId);
         if (user == null)
         {
-            return Result.NotFound("User not found.");
+            return Result.NotFound("المستخدم غير موجود.");
         }
 
         var result = await _userManager.DeleteAsync(user);
@@ -188,7 +188,7 @@ public class CustomerService : ICustomerService
             return Result.Error(errors);
         }
 
-        return Result.SuccessWithMessage("Account deleted successfully.");
+        return Result.SuccessWithMessage("تم حذف الحساب بنجاح.");
     }
 
     // Helper method to get current user ID
@@ -197,7 +197,7 @@ public class CustomerService : ICustomerService
         var userId = _httpContextAccessor.HttpContext?.User.FindFirstValue(ClaimTypes.NameIdentifier);
         if (string.IsNullOrEmpty(userId))
         {
-            throw new UnauthorizedAccessException("User not authenticated.");
+            throw new UnauthorizedAccessException("المستخدم غير مصادق عليه.");
         }
         return userId;
     }

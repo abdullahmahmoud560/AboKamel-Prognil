@@ -46,7 +46,7 @@ public class ProductService : CrudService<ProductRequestDto, Product, Dtos.Dashb
 
         if (product == null)
         {
-            return Result.Error("Could not find product.");
+            return Result.Error("لم يتم العثور على المنتج.");
         }
 
         var productSellingUnits = _mapper.Map<List<ProductSellingUnit>>(request);
@@ -69,7 +69,7 @@ public class ProductService : CrudService<ProductRequestDto, Product, Dtos.Dashb
 
         if (productSellingUnit == null)
         {
-            return Result.Error("Could not find product selling unit.");
+            return Result.Error("لم يتم العثور على وحدة بيع المنتج.");
         }
 
         //var productSellingUnits = _mapper.Map<ProductSellingUnit>(request);
@@ -96,7 +96,7 @@ public class ProductService : CrudService<ProductRequestDto, Product, Dtos.Dashb
 
         if (products == null || products.Count == 0)
         {
-            return Result.Error("No low stock products found.");
+            return Result.Error("لم يتم العثور على منتجات منخفضة المخزون.");
         }
 
         var response = _mapper.Map<List<Dtos.Dashboard.Products.ProductResponseDto>>(products);
@@ -110,7 +110,7 @@ public class ProductService : CrudService<ProductRequestDto, Product, Dtos.Dashb
 
         if (products == null || products.Count == 0)
         {
-            return Result.Error("No best selling products found.");
+            return Result.Error("لم يتم العثور على منتجات الأكثر مبيعاً.");
         }
 
         var response = _mapper.Map<List<Dtos.Dashboard.Products.ProductResponseDto>>(products);

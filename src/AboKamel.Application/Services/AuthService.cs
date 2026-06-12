@@ -60,7 +60,7 @@ public class AuthService : IAuthService
 
         if (!user.EmailConfirmed)
         {
-            return Result.Error("Your account is not activated. Please verify your email first.");
+            return Result.Error("لم يتم تفعيل حسابك بعد. يرجى التحقق من بريدك الإلكتروني أولاً.");
         }
 
         var roles = (List<string>)await _userManager.GetRolesAsync(user);

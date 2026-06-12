@@ -37,8 +37,8 @@ public class CrudService<TRequestDto, TEntity, TResponseDto, TDetailedResponseDt
         var record = await _repository.GetByIdAsync(id);
         if (record == null)
         {
-            _logger.LogWarning("Record with ID {Id} is not found", id);
-            return Result.Error("Record was not found");
+            _logger.LogWarning("السجل رقم {Id} غير موجود", id);
+            return Result.Error("لم يتم العثور على السجل");
         }
         return Result.Success(_mapper.Map<TDetailedResponseDto>(record));
     }
@@ -50,11 +50,11 @@ public class CrudService<TRequestDto, TEntity, TResponseDto, TDetailedResponseDt
 
         if (!isRecordAdded)
         {
-            _logger.LogError($"could not create record");
-            return Result.Error("Could not create record");
+            _logger.LogError($"لم يتم إنشاء السجل");
+            return Result.Error("لم يتم إنشاء السجل");
         }
 
-        _logger.LogInformation("Record added successfully with ID {Id}", record.Id);
+        _logger.LogInformation("تم إضافة السجل بنجاح برقم {Id}", record.Id);
         return Result.Success(_mapper.Map<TResponseDto>(record));
     }
 
@@ -63,8 +63,8 @@ public class CrudService<TRequestDto, TEntity, TResponseDto, TDetailedResponseDt
         var record = await _repository.GetByIdAsync(id);
         if (record == null)
         {
-            _logger.LogWarning("Update failed. record with ID {Id} not found", id);
-            return Result.Error("Order not found");
+            _logger.LogWarning("فشل التحديث. السجل رقم {Id} غير موجود", id);
+            return Result.Error("لم يتم العثور على السجل");
         }
 
         _mapper.Map(request, record);
@@ -72,11 +72,11 @@ public class CrudService<TRequestDto, TEntity, TResponseDto, TDetailedResponseDt
 
         if (!isRecordUpdated)
         {
-            _logger.LogError("Could not update record");
-            return Result.Error($"could not update record");
+            _logger.LogError("لم يتم تحديث السجل");
+            return Result.Error($"لم يتم تحديث السجل");
         }
 
-        _logger.LogInformation("Record with ID {Id} updated successfully", id);
+        _logger.LogInformation("تم تحديث السجل رقم {Id} بنجاح", id);
         return Result.Success(_mapper.Map<TResponseDto>(record));
     }
 
@@ -85,19 +85,19 @@ public class CrudService<TRequestDto, TEntity, TResponseDto, TDetailedResponseDt
         var record = await _repository.GetByIdAsync(id);
         if (record == null)
         {
-            _logger.LogWarning("Delete failed. Record with ID {Id} not found", id);
-            return Result.Error("Record was not found");
+            _logger.LogWarning("فشل الحذف. السجل رقم {Id} غير موجود", id);
+            return Result.Error("لم يتم العثور على السجل");
         }
 
         bool isRecordDeleted = await _repository.DeleteAsync(record);
 
         if (!isRecordDeleted)
         {
-            _logger.LogError("Could not delete record");
-            return Result.Error($"could not delete oder");
+            _logger.LogError("لم يتم حذف السجل");
+            return Result.Error($"لم يتم حذف السجل");
         }
 
-        _logger.LogInformation("Record with ID {Id} deleted successfully", id);
+        _logger.LogInformation("تم حذف السجل رقم {Id} بنجاح", id);
         return Result.Success(_mapper.Map<TResponseDto>(record));
     }
 }

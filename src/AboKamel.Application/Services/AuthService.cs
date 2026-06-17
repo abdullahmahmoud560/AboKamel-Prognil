@@ -52,9 +52,18 @@ public class AuthService : IAuthService
 
     public async Task<ResultAbstract<LoginResponseDto>> Login(LoginRequestDto loginRequestDto)
     {
-        var user = await _userManager.FindByEmailAsync(loginRequestDto.Email);
+        // Try to find user by email first
+        var user = await _userManager.FindByEmailAsync(loginRequestDto.Identifier);
+        
+        // If not found, try by phone number
+        if (user == null)
+        {
+            user = await _userManager.Users.FirstOrDefaultAsync(u => u.PhoneNumber == loginRequestDto.Identifier);
+        }
+
         if (user is null || !await _userManager.CheckPasswordAsync(user, loginRequestDto.Password))
         {
+            _logger.LogWarning("Failed login attempt for identifier: {Identifier}", loginRequestDto.Identifier);
             return Result.Error("بيانات الدخول غير صحيحة");
         }
 
@@ -69,6 +78,7 @@ public class AuthService : IAuthService
         loginResponseDto.Roles = roles;
         loginResponseDto.Token = token;
 
+        _logger.LogInformation("User logged in successfully: {UserId}", user.Id);
         return ResultAbstract<LoginResponseDto>.Success(loginResponseDto);
     }
 
@@ -190,38 +200,105 @@ public class AuthService : IAuthService
         }
     }
 
-    private async Task GenerateAndSendOtpAsync(string userId, string email, string purpose)
+    private async Task GenerateAndSendOtpAsync(string userId, string email, string purpose, bool isResend = false)
     {
-        var otp = GenerateOtp();
-        var otpHash = HashOtp(otp);
+        int code = RandomNumberGenerator.GetInt32(100000, 1000000);
+        string otp = code.ToString();
 
-        // Remove old OTPs for this user and purpose
-        var oldOtps = await _dbContext.TwoFactorVerifies
-            .Where(x => x.UserId == userId && x.Purpose == purpose)
-            .ToListAsync();
-        _dbContext.TwoFactorVerifies.RemoveRange(oldOtps);
+        using var sha256 = SHA256.Create();
+        var hashedBytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(otp));
+        string otpHash = Convert.ToBase64String(hashedBytes);
 
-        var twoFactorVerify = new TwoFactorVerify
+        var twoFactorVerify = await _dbContext.TwoFactorVerifies
+            .FirstOrDefaultAsync(x => x.UserId == userId && x.Purpose == purpose);
+
+        if (twoFactorVerify != null)
         {
-            UserId = userId,
-            Email = email,
-            OTPHash = otpHash,
-            Purpose = purpose,
-            ExpirationDate = DateTime.UtcNow.AddMinutes(5),
-            FailedAttempts = 0,
-            IsVerified = false
-        };
+            twoFactorVerify.OTPHash = otpHash;
+            twoFactorVerify.ExpirationDate = DateTime.UtcNow.AddMinutes(10);
+            twoFactorVerify.FailedAttempts = 0;
+            twoFactorVerify.IsVerified = false;
+            if (isResend)
+            {
+                twoFactorVerify.ResendAttempts++;
+                twoFactorVerify.LastResendDate = DateTime.UtcNow;
+            }
+        }
+        else
+        {
+            twoFactorVerify = new TwoFactorVerify
+            {
+                UserId = userId,
+                Email = email,
+                OTPHash = otpHash,
+                Purpose = purpose,
+                ExpirationDate = DateTime.UtcNow.AddMinutes(10),
+                FailedAttempts = 0,
+                IsVerified = false,
+                ResendAttempts = 0
+            };
+            await _dbContext.TwoFactorVerifies.AddAsync(twoFactorVerify);
+        }
 
-        await _dbContext.TwoFactorVerifies.AddAsync(twoFactorVerify);
         await _dbContext.SaveChangesAsync();
 
-        // Send OTP via email
-        var subject = purpose == "Register" ? "تأكيد التسجيل" : "إعادة تعيين كلمة المرور";
-        var body = purpose == "Register"
-            ? $"مرحبًا،\n\nرمز التأكيد الخاص بك هو: {otp}\n\nينتهي صلاحيته خلال 5 دقائق."
-            : $"مرحبًا،\n\nرمز إعادة تعيين كلمة المرور الخاص بك هو: {otp}\n\nينتهي صلاحيته خلال 5 دقائق.";
+        _logger.LogInformation("OTP generated and saved successfully for {Email}. Purpose: {Purpose}", email, purpose);
 
-        await _emailService.SendEmailAsync(email, subject, body);
+        var subject = purpose == "Register" ? "تأكيد التسجيل" : "إعادة تعيين كلمة المرور";
+        var body = $"مرحبًا،\n\nرمز التأكيد هو: {otp}\n\nينتهي صلاحيته خلال 10 دقائق.";
+
+        try
+        {
+            await _emailService.SendEmailAsync(email, subject, body);
+            _logger.LogInformation("OTP email sent successfully to {Email}", email);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to send OTP email to {Email}", email);
+            throw; 
+        }
+    }
+
+    public async Task<Result> ResendOtpAsync(ResendOtpRequestDto request)
+    {
+        var user = await _userManager.FindByEmailAsync(request.Email);
+        if (user == null)
+        {
+            // Still return success to not reveal if email exists
+            return Result.SuccessWithMessage("تم إرسال رمز التأكيد إلى البريد الخاص بك إذا كان موجودًا.");
+        }
+
+        var twoFactorVerify = await _dbContext.TwoFactorVerifies
+            .FirstOrDefaultAsync(x => x.UserId == user.Id && x.Purpose == request.Purpose);
+
+        if (twoFactorVerify == null)
+        {
+            return Result.SuccessWithMessage("تم إرسال رمز التأكيد إلى البريد الخاص بك إذا كان موجودًا.");
+        }
+
+        // Check rate limiting: max 3 resend attempts, 15 minutes window
+        const int maxResendAttempts = 3;
+        const int resendWindowMinutes = 15;
+
+        // If last resend was within the window, check if we've exceeded attempts
+        if (twoFactorVerify.LastResendDate.HasValue && 
+            twoFactorVerify.LastResendDate.Value.AddMinutes(resendWindowMinutes) > DateTime.UtcNow)
+        {
+            if (twoFactorVerify.ResendAttempts >= maxResendAttempts)
+            {
+                return Result.Error($"لقد تجاوزت الحد الأقصى لطلبات إعادة إرسال الرمز. يرجى المحاولة بعد {resendWindowMinutes} دقيقة.");
+            }
+        }
+        else
+        {
+            // Reset resend attempts if window has expired
+            twoFactorVerify.ResendAttempts = 0;
+        }
+
+        // Proceed to resend OTP
+        await GenerateAndSendOtpAsync(user.Id, user.Email, request.Purpose, isResend: true);
+
+        return Result.SuccessWithMessage("تم إرسال رمز التأكيد إلى البريد الخاص بك.");
     }
 
     public async Task<Result> ForgetPasswordAsync(ForgetPasswordRequestDto request)

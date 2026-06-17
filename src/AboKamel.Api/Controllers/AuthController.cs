@@ -168,4 +168,17 @@ public class AuthController(IAuthService authService) : BaseController
     {
         return await _authService.ResetPasswordAsync(request);
     }
+
+    /// <summary>
+    /// Resends an OTP for registration or password reset with rate limiting.
+    /// </summary>
+    /// <param name="request">The resend OTP request dto.</param>
+    /// <returns>A result representing the operation.</returns>
+    [HttpPost("ResendOtp")]
+    [ProducesResponseType(typeof(Result), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(Result), StatusCodes.Status400BadRequest)]
+    public async Task<Result> ResendOtp(ResendOtpRequestDto request)
+    {
+        return await _authService.ResendOtpAsync(request);
+    }
 }

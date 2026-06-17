@@ -21,4 +21,3 @@ COPY src/AboKamel.Api/wwwroot ./wwwroot
 COPY src/AboKamel.Api/SeedData ./SeedData
 
 EXPOSE 8080
-ENTRYPOINT ["dotnet", "AboKamel.Api.dll"]

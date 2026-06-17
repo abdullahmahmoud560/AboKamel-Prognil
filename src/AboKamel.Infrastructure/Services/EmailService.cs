@@ -4,8 +4,7 @@ using Services.Core.Contracts;
 using System;
 using System.Threading.Tasks;
 using MailKit.Security;
-using System.Net.Security;
-using Microsoft.Extensions.Logging; // إضافة مكتبة الـ Logger
+using Microsoft.Extensions.Logging;
 
 namespace Services.Infrastructure.Services;
 
@@ -21,13 +20,13 @@ public class EmailService : IEmailService
     public async Task SendEmailAsync(string toEmail, string subject, string body)
     {
         var smtpHost = Environment.GetEnvironmentVariable("Email__SmtpHost");
-        var smtpPort = int.Parse(Environment.GetEnvironmentVariable("Email__SmtpPort") ?? "2525");
+        var smtpPort = int.Parse(Environment.GetEnvironmentVariable("Email__SmtpPort") ?? "587");
         var smtpUser = Environment.GetEnvironmentVariable("Email__SmtpUsername");
         var smtpPass = Environment.GetEnvironmentVariable("Email__SmtpPassword");
         var fromEmail = Environment.GetEnvironmentVariable("Email__FromEmail");
         var fromName = Environment.GetEnvironmentVariable("Email__FromName");
 
-        _logger.LogInformation("Attempting to send email to {ToEmail} via {Host}:{Port}", toEmail, smtpHost, smtpPort);
+        _logger.LogInformation("Starting email process for {ToEmail}", toEmail);
 
         var message = new MimeMessage();
         message.From.Add(new MailboxAddress(fromName, fromEmail));
@@ -40,14 +39,15 @@ public class EmailService : IEmailService
             using (var client = new SmtpClient())
             {
                 client.ServerCertificateValidationCallback = (s, c, h, e) => true;
+                client.Timeout = 10000;
 
-                _logger.LogInformation("Connecting to SMTP server...");
-                await client.ConnectAsync(smtpHost, smtpPort, SecureSocketOptions.StartTls);
-                
-                _logger.LogInformation("Authenticating user: {User}", smtpUser);
+                _logger.LogInformation("Connecting to {Host}:{Port}...", smtpHost, smtpPort);
+                await client.ConnectAsync(smtpHost, smtpPort, SecureSocketOptions.Auto);
+
+                _logger.LogInformation("Authenticating user {User}...", smtpUser);
                 await client.AuthenticateAsync(smtpUser, smtpPass);
-                
-                _logger.LogInformation("Sending message...");
+
+                _logger.LogInformation("Sending email...");
                 await client.SendAsync(message);
                 
                 await client.DisconnectAsync(true);
@@ -56,7 +56,7 @@ public class EmailService : IEmailService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error occurred while sending email to {ToEmail}: {Message}", toEmail, ex.Message);
+            _logger.LogError(ex, "Error while sending email to {ToEmail}: {Message}", toEmail, ex.Message);
             throw;
         }
     }

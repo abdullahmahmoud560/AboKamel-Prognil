@@ -13,5 +13,7 @@ public class TwoFactorVerify : IEntity<int>
     public DateTime ExpirationDate { get; set; }
     public int FailedAttempts { get; set; }
     public bool IsVerified { get; set; }
+    public int ResendAttempts { get; set; }
+    public DateTime? LastResendDate { get; set; }
     public virtual ApplicationUser User { get; set; } = null!;
 }

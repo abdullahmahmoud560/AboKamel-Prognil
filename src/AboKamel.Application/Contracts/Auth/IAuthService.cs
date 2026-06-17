@@ -101,4 +101,11 @@ public interface IAuthService : IApplicationService, IScopedService
     /// <param name="request">The reset password request DTO.</param>
     /// <returns>A task representing the asynchronous operation, with a result.</returns>
     Task<Result> ResetPasswordAsync(ResetPasswordRequestDto request);
+
+    /// <summary>
+    /// Resends an OTP for a specific purpose with rate limiting.
+    /// </summary>
+    /// <param name="request">The resend OTP request DTO.</param>
+    /// <returns>A task representing the asynchronous operation, with a result.</returns>
+    Task<Result> ResendOtpAsync(ResendOtpRequestDto request);
 }

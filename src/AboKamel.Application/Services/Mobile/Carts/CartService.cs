@@ -61,13 +61,18 @@ public class CartService : ICartService
         var currentUserId = customerId ?? GetCurrentUserId();
         var cart = await _cartRepository.GetCustomerCartDetailsAsync(currentUserId);
 
+        if (cart is null)
+        {
+            return Result.Success(new CartDetailedResponseDto());
+        }
+
         var cartDetails = _mapper.Map<CartDetailedResponseDto>(cart);
 
-        cartDetails.TotalPrice = cart.Items.Sum(i => i.ProductSellingUnit.Price * i.Quantity);
-        //cartDetails.TotalPrice = cart.Items.Sum(i =>
+        cartDetails.TotalPrice = cart.Items?.Sum(i => i.ProductSellingUnit.Price * i.Quantity) ?? 0;
+        //cartDetails.TotalPrice = cart.Items?.Sum(i =>
         //    i.Unit == ProductUnitType.Box
         //        ? i.Product.Price * i.Quantity
-        //        : i.Product.StripPrice * i.Quantity);
+        //        : i.Product.StripPrice * i.Quantity) ?? 0;
 
 
         if (cartDetails.Prescription is not null)

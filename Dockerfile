@@ -20,4 +20,5 @@ COPY --from=build-env /app/out .
 COPY src/AboKamel.Api/wwwroot ./wwwroot
 COPY src/AboKamel.Api/SeedData ./SeedData
 
+ENTRYPOINT ["dotnet", "AboKamel.Api.dll"]
 EXPOSE 8080

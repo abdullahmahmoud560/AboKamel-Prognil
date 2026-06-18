@@ -48,7 +48,7 @@ services:
     ports:
       - "5000:8080"
     volumes:
-      - /home/abokamel/uploads:/app/wwwroot/images
+      - /home/prognil/projects/abokamel_backend/src/AboKamel.Api/wwwroot:/app/wwwroot
     environment:
       - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT}
       - ConnectionStrings__DefaultConnection=${ConnectionStrings__DefaultConnection}

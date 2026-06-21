@@ -1,8 +1,8 @@
-﻿using Capsula.Application.Contracts.Dashboard.Brands;
+using Capsula.Application.Contracts.Dashboard.Brands;
 using Capsula.Application.Contracts.Images;
 using Capsula.Application.Dtos.Dashboard.Brands;
-using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
+using Services.Core.Dtos;
 using Services.Core.Results;
 
 namespace Capsula.Api.Controllers.Dashboard.Brands;
@@ -19,9 +19,9 @@ public class BrandsController : DashboardBaseController
     }
 
     [HttpGet]
-    public async Task<ActionResult<ResultAbstract<IEnumerable<BrandResponseDto>>>> GetAllAsync()
+    public async Task<ActionResult<ResultAbstract<PagedResultDto<BrandResponseDto>>>> GetAllAsync([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
     {
-        var result = await _brandService.GetAllAsync();
+        var result = await _brandService.GetAllBrandsAsync(pageNumber, pageSize);
         return Ok(result);
     }
 
@@ -30,7 +30,7 @@ public class BrandsController : DashboardBaseController
     {
         var result = await _brandService.GetBrandWithProducts(id);
 
-        if(!result.IsSuccess)
+        if (!result.IsSuccess)
         {
             return NotFound(result);
         }
@@ -50,14 +50,14 @@ public class BrandsController : DashboardBaseController
             return BadRequest(result);
         }
 
-        var relativePath = _imageService.ExtractImagePath(result.Value.ImageUrl);
+        var relativePath = _imageService.ExtractImagePath(result.Value.ImageUrl ?? string.Empty);
         await _imageService.SaveImageAsync(relativePath, request.ImageFile);
 
         return Ok(result);
     }
 
     [HttpPut("{id}")]
-    public async Task<ActionResult<ResultAbstract<BrandResponseDto>>> UpdateAsync([FromForm]  BrandRequestDto request, int id)
+    public async Task<ActionResult<ResultAbstract<BrandResponseDto>>> UpdateAsync([FromForm] BrandRequestDto request, int id)
     {
         _imageService.ValidateImage(request.ImageFile);
 
@@ -68,7 +68,7 @@ public class BrandsController : DashboardBaseController
             return BadRequest(result);
         }
 
-        var relativePath = _imageService.ExtractImagePath(result.Value.ImageUrl);
+        var relativePath = _imageService.ExtractImagePath(result.Value.ImageUrl ?? string.Empty);
         await _imageService.SaveImageAsync(relativePath, request.ImageFile);
 
         return Ok(result);
@@ -84,7 +84,7 @@ public class BrandsController : DashboardBaseController
             return NotFound(result);
         }
 
-        var relativePath = _imageService.ExtractImagePath(result.Value.ImageUrl);
+        var relativePath = _imageService.ExtractImagePath(result.Value.ImageUrl ?? string.Empty);
         _imageService.DeleteImage(relativePath);
 
         return Ok(result);

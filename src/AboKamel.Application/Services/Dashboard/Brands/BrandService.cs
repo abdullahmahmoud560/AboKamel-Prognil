@@ -1,9 +1,10 @@
-﻿using AutoMapper;
+using AutoMapper;
 using Capsula.Application.Contracts.Dashboard.Brands;
 using Capsula.Application.Dtos.Dashboard.Brands;
 using Capsula.Domain.Entities.Brands;
 using Capsula.Domain.Repositories.Brands;
 using Microsoft.Extensions.Logging;
+using Services.Core.Dtos;
 using Services.Core.Results;
 
 namespace Capsula.Application.Services.Dashboard.Brands;
@@ -25,12 +26,19 @@ public class BrandService : CrudService<BrandRequestDto, Brand, BrandResponseDto
     {
         var brand = await _brandRepository.GetBrandWithProductsAsync(id);
 
-        if(brand is null)
+        if (brand is null)
         {
             _logger.LogError("record was not found");
-            Result.Error("Brand was not found");
+            return Result.Error("Brand was not found");
         }
 
         return Result.Success(_mapper.Map<BrandDetailedResponseDto>(brand));
+    }
+
+    public async Task<ResultAbstract<PagedResultDto<BrandResponseDto>>> GetAllBrandsAsync(int pageNumber = 1, int pageSize = 10)
+    {
+        var (brands, totalCount) = await _brandRepository.GetPagedBrandsAsync(pageNumber, pageSize);
+        var response = new PagedResultDto<BrandResponseDto>(totalCount, _mapper.Map<List<BrandResponseDto>>(brands));
+        return Result.Success(response);
     }
 }

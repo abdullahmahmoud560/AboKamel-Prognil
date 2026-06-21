@@ -8,9 +8,9 @@ namespace Services.Core.Helpers.Roles;
 
 public static class RoleName
 {
-    public const string PharmacyAdmin = "PharmacyAdmin";
     public const string Customer = "Customer";
     public const string SuperAdmin = "SuperAdmin";
-    public const string Admin = "Admin";
+    public const string Driver = "Driver";
+    public const string Salesperson = "Salesperson";
 
 }

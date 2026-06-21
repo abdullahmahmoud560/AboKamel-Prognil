@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using System;
@@ -22,21 +22,21 @@ public class UserRolesConfiguration : IEntityTypeConfiguration<IdentityRole>
                     },
                     new IdentityRole
                     {
-                        Id = "3d48c77e-38fd-4b0e-8c2d-3b10d63a35e0",
-                        Name = "PharmacyAdmin",
-                        NormalizedName = "PHARMACYADMIN"
-                    },
-                    new IdentityRole
-                    {
                         Id = "6c7d12a2-bd8f-4f2e-bf4c-3b89d60f1fd4",
                         Name = "SuperAdmin",
                         NormalizedName = "SUPERADMIN"
                     },
                     new IdentityRole
                     {
-                        Id = "f3b82a73-3e4d-4b8c-a6b8-1f5a9b6d2b15",
-                        Name = "Admin",
-                        NormalizedName = "ADMIN"
+                        Id = "a1b2c3d4-e5f6-7g8h-9i0j-k1l2m3n4o5p6",
+                        Name = "Driver",
+                        NormalizedName = "DRIVER"
+                    },
+                    new IdentityRole
+                    {
+                        Id = "q7r8s9t0-u1v2-3w4x-5y6z-7a8b9c0d1e2f",
+                        Name = "Salesperson",
+                        NormalizedName = "SALESPERSON"
                     }
                 );
     }

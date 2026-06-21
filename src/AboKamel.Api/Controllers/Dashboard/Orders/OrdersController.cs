@@ -1,9 +1,11 @@
-﻿using AboKamel.Application.Contracts.Dashboard.Orders;
+using AboKamel.Application.Contracts.Dashboard.Orders;
 using AboKamel.Application.Dtos.Dashboard.Orders;
 using AboKamel.Core.Enums;
 using Capsula.Api.Controllers.Dashboard;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Services.Core.Authorization;
+using Services.Core.Helpers.Roles;
 using Services.Core.Results;
 
 namespace AboKamel.Api.Controllers.Dashboard.Orders;
@@ -18,7 +20,7 @@ public class OrdersController : DashboardBaseController
     }
 
     [HttpGet]
-    [Authorize(Roles = "SuperAdmin")]
+    [Authorize(Policy = AuthorizationPolicies.RequireViewInvoices)]
     public async Task<ActionResult<ResultAbstract<OrderResponseDto>>> GetAllOrdersAsynnc()
     {
         var result = await _orderService.GetAllOrdersAsync();
@@ -30,7 +32,7 @@ public class OrdersController : DashboardBaseController
     }
 
     [HttpGet("GetOrderById/{orderId}")]
-    [Authorize(Roles = "SuperAdmin")]
+    [Authorize(Policy = AuthorizationPolicies.RequireViewInvoiceGeneralData)]
     public async Task<ActionResult<ResultAbstract<OrderResponseDto>>> GetOrderByIdAsync(int orderId)
     {
         var result = await _orderService.GetOrderByIdAsync(orderId);
@@ -42,7 +44,7 @@ public class OrdersController : DashboardBaseController
     }
 
     [HttpPatch("AddOrderDiscount/{orderId}")]
-    [Authorize(Roles = "SuperAdmin")]
+    [Authorize(Roles = RoleName.SuperAdmin)]
     public async Task<ActionResult<ResultAbstract<OrderResponseDto>>> AddOrderDiscount(int orderId, decimal discount)
     {
         var result = await _orderService.AddDiscountAsync(orderId, discount);
@@ -54,7 +56,7 @@ public class OrdersController : DashboardBaseController
     }
 
     [HttpGet("GetOrderByStatus/{status}")]
-    [Authorize(Roles = "SuperAdmin")]
+    [Authorize(Policy = AuthorizationPolicies.RequireViewInvoices)]
     public async Task<ActionResult<ResultAbstract<OrderResponseDto>>> GetOrdersByStatus(OrderStatus status)
     {
         var result = await _orderService.GetOrdersByStatusAsync(status);
@@ -66,7 +68,7 @@ public class OrdersController : DashboardBaseController
     }
 
     [HttpPatch("UpdateOrderStatus/order/{orderId}/status/{status}/notes/{notes}")]
-    [Authorize(Roles = "SuperAdmin")]
+    [Authorize(Policy = AuthorizationPolicies.RequireDeliverOrders)]
     public async Task<IActionResult> UpdateOrderStatus(int orderId, OrderStatus status, DateOnly? arrivalDate, string? notes)
     {
         var result = await _orderService.UpdateOrderStatusAsync(orderId, status, arrivalDate, notes);
@@ -78,7 +80,7 @@ public class OrdersController : DashboardBaseController
     }
 
     [HttpPatch("UpdateOrderItemQuantity/order/{orderId}/product/{productId}/quantity/{quantity}")]
-    [Authorize(Roles = "SuperAdmin")]
+    [Authorize(Roles = RoleName.SuperAdmin)]
     public async Task<IActionResult> UpdateOrderItemQuantityAsync(int orderId, int productId, int quantity)
     {
         var result = await _orderService.UpdateOrderItemQuantityAsync(orderId, productId, quantity);
@@ -90,7 +92,7 @@ public class OrdersController : DashboardBaseController
     }
 
     [HttpDelete("DeleteOrderItem/order/{orderId}/product/{productId}")]
-    [Authorize(Roles = "SuperAdmin")]
+    [Authorize(Roles = RoleName.SuperAdmin)]
     public async Task<IActionResult> DeleteOrderItemAsync(int orderId, int productId)
     {
         var result = await _orderService.UpdateOrderItemQuantityAsync(orderId, productId, 0);

@@ -1,4 +1,4 @@
-﻿using Capsula.Domain.Entities.Brands;
+using Capsula.Domain.Entities.Brands;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -17,5 +17,11 @@ public class BrandConfiguration : IEntityTypeConfiguration<Brand>
 
         builder.Property(x => x.ImagePath)
             .HasMaxLength(500);
+
+        // Configure hierarchical relationship (ParentBrand - ChildBrands)
+        builder.HasOne(b => b.ParentBrand)
+            .WithMany(b => b.ChildBrands)
+            .HasForeignKey(b => b.ParentBrandId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }

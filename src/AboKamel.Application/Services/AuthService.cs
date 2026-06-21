@@ -10,6 +10,8 @@ using Services.Application.Contracts.Auth;
 using Services.Application.Dtos.Authentication;
 using Services.Core.Contracts;
 using Services.Core.Dtos;
+using Services.Core.Helpers;
+using Services.Core.Helpers.Roles;
 using Services.Core.Results;
 using Services.Domain.Entities.Users;
 using Services.Infrastructure.DbContexts;
@@ -166,7 +168,20 @@ public class AuthService : IAuthService
     public async Task<ResultAbstract<List<RoleResponseDto>>> GetRolesAsync()
     {
         var roles = await _roleManager.Roles.ToListAsync();
-        return Result.Success(_mapper.Map<List<RoleResponseDto>>(roles));
+        var roleDtos = roles.Select(role => new RoleResponseDto
+        {
+            Id = role.Id,
+            Name = role.Name,
+            ArabicName = role.Name switch
+            {
+                "Customer" => "عميل",
+                "SuperAdmin" => "مدير النظام",
+                "Driver" => "سائق",
+                "Salesperson" => "مندوب",
+                _ => role.Name
+            }
+        }).ToList();
+        return Result.Success(roleDtos);
     }
 
     public string GenerateJwtToken(ApplicationUser user, List<string> roles)
@@ -176,7 +191,24 @@ public class AuthService : IAuthService
             new Claim(ClaimTypes.NameIdentifier, user.Id ?? string.Empty),
             new Claim(ClaimTypes.Email, user.Email ?? string.Empty)
         };
-        foreach (var role in roles) claims.Add(new Claim(ClaimTypes.Role, role));
+        foreach (var role in roles)
+        {
+            claims.Add(new Claim(ClaimTypes.Role, role));
+            
+            // Add permissions based on role
+            if (role == RoleName.Driver)
+            {
+                claims.Add(new Claim("Permission", Permissions.ViewInvoices));
+                claims.Add(new Claim("Permission", Permissions.ViewInvoicePhoneNumber));
+                claims.Add(new Claim("Permission", Permissions.ViewInvoiceLocation));
+                claims.Add(new Claim("Permission", Permissions.ViewInvoiceGeneralData));
+                claims.Add(new Claim("Permission", Permissions.DeliverOrders));
+            }
+            else if (role == RoleName.Salesperson)
+            {
+                claims.Add(new Claim("Permission", Permissions.RegisterNewAccounts));
+            }
+        }
 
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwt.Key ?? string.Empty));
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
